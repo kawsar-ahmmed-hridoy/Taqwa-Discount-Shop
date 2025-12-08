@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum PaymentMode {
+  CASH
+  CARD
+  UPI
+}
+
+enum OrderStatus {
+  PENDING
+  DELIVERED
+  CANCELLED
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  fullName      String
+  role          UserRole
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sales         Sale[]
+  expenses      Expense[]
+  auditLogs     AuditLog[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id              Int                 @id @default(autoincrement())
+  name            String
+  barcode         String?             @unique
+  sku             String              @unique
+  categoryId      Int
+  brand           String?
+  purchasePrice   Float
+  sellingPrice    Float
+  stockQuantity   Int                 @default(0)
+  minStockLevel   Int                 @default(10)
+  expiryDate      DateTime?
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  category        Category            @relation(fields: [categoryId], references: [id])
+  saleItems       SaleItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockAdjustments StockAdjustment[]
+
+  @@index([categoryId])
+  @@index([barcode])
+  @@index([sku])
+  @@map("products")
+}
+
+model Customer {
+  id            Int       @id @default(autoincrement())
+  name          String
+  phone         String    @unique
+  email         String?
+  address       String?
+  loyaltyPoints Int       @default(0)
+  createdAt     DateTime  @default(now())
+  sales         Sale[]
+
+  @@index([phone])
+  @@map("customers")
+}
+
+model Sale {
+  id            Int         @id @default(autoincrement())
+  invoiceNo     String      @unique
+  customerId    Int?
+  userId        Int
+  subtotal      Float
+  discount      Float       @default(0)
+  vat           Float
+  total         Float
+  paymentMode   PaymentMode
+  createdAt     DateTime    @default(now())
+  customer      Customer?   @relation(fields: [customerId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  items         SaleItem[]
+
+  @@index([invoiceNo])
+  @@index([customerId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("sales")
+}
+
+model SaleItem {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  productId Int
+  quantity  Int
+  price     Float
+  total     Float
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+model Supplier {
+  id              Int             @id @default(autoincrement())
+  name            String
+  contactPerson   String
+  phone           String          @unique
+  email           String?
+  address         String?
+  createdAt       DateTime        @default(now())
+  purchaseOrders  PurchaseOrder[]
+
+  @@index([phone])
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id           Int                 @id @default(autoincrement())
+  orderNo      String              @unique
+  supplierId   Int
+  userId       Int
+  status       OrderStatus         @default(PENDING)
+  orderDate    DateTime            @default(now())
+  deliveryDate DateTime?
+  total        Float
+  notes        String?             @db.Text
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  user         User                @relation(fields: [userId], references: [id])
+  items        PurchaseOrderItem[]
+
+  @@index([orderNo])
+  @@index([supplierId])
+  @@index([userId])
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              Int           @id @default(autoincrement())
+  purchaseOrderId Int
+  productId       Int
+  quantity        Int
+  price           Float
+  total           Float
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+  @@map("purchase_order_items")
+}
+
+model Expense {
+  id          Int           @id @default(autoincrement())
+  category    String
+  amount      Float
+  description String        @db.Text
+  status      ExpenseStatus @default(PENDING)
+  userId      Int
+  expenseDate DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+model StockAdjustment {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  quantity   Int
+  type       String
+  reason     String   @db.Text
+  createdAt  DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@map("stock_adjustments")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String
+  entity    String
+  entityId  Int?
+  details   String?  @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  type      String
+  title     String
+  message   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Settings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
