@@ -48,6 +48,7 @@ export const productAPI = {
   getLowStock: () => api.get('/products/low-stock'),
   getExpiring: (days?: number) => api.get('/products/expiring', { params: { days } }),
   search: (query: string) => api.get('/products/search', { params: { q: query } }),
+  getCategories: () => api.get('/products/categories'),
 };
 
 export const saleAPI = {
@@ -103,6 +104,8 @@ export const dashboardAPI = {
 export const notificationAPI = {
   getAll: () => api.get('/notifications'),
   markAsRead: (id: number) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  create: (data: unknown) => api.post('/notifications', data),
 };
 
 export const settingsAPI = {

@@ -9,7 +9,7 @@ interface ProductModalProps {
 }
 
 const ProductModal = ({ product, onClose }: ProductModalProps) => {
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     name: '',
     sku: '',
     barcode: '',
@@ -17,13 +17,14 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
     brand: '',
     purchasePrice: 0,
     sellingPrice: 0,
+    discount: 0,
     stockQuantity: 0,
     minStockLevel: 10,
     expiryDate: '',
   });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     if (product) {
       setFormData({
         name: product.name,
@@ -33,6 +34,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
         brand: product.brand || '',
         purchasePrice: product.purchasePrice,
         sellingPrice: product.sellingPrice,
+        discount: product.discount || 0,
         stockQuantity: product.stockQuantity,
         minStockLevel: product.minStockLevel,
         expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
@@ -45,13 +47,16 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
     setLoading(true);
 
     try {
-      const data = {
+const data = {
         ...formData,
         purchasePrice: Number(formData.purchasePrice),
         sellingPrice: Number(formData.sellingPrice),
+        discount: Number(formData.discount),
         stockQuantity: Number(formData.stockQuantity),
         minStockLevel: Number(formData.minStockLevel),
         categoryId: Number(formData.categoryId),
+        barcode: formData.barcode.trim() || null,
+        brand: formData.brand.trim() || null,
         expiryDate: formData.expiryDate || null,
       };
 
@@ -153,7 +158,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
               />
             </div>
 
-            <div>
+<div>
               <label className="block text-sm font-medium mb-2">Selling Price *</label>
               <input
                 type="number"
@@ -163,6 +168,24 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
                 onChange={(e) => setFormData({ ...formData, sellingPrice: Number(e.target.value) })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Discount (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={formData.discount}
+                onChange={(e) => setFormData({ ...formData, discount: Number(e.target.value) })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              />
+              {formData.discount > 0 && (
+                <p className="text-xs text-gold-600 mt-1">
+                  Final price: BDT {(formData.sellingPrice * (1 - formData.discount / 100)).toFixed(2)}
+                </p>
+              )}
             </div>
 
             <div>

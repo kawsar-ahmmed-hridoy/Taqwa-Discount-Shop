@@ -64,13 +64,13 @@ export const getProductById = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: product,
     });
   } catch (error) {
     console.error('Get product error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch product',
     });
@@ -108,7 +108,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: product,
     });
@@ -122,7 +122,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to create product',
     });
@@ -155,7 +155,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: product,
     });
@@ -169,7 +169,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to update product',
     });
@@ -195,7 +195,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Product deleted successfully',
     });
@@ -209,7 +209,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to delete product',
     });
@@ -305,13 +305,13 @@ export const searchProducts = async (req: AuthRequest, res: Response) => {
       take: 20,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: products,
     });
   } catch (error) {
     console.error('Search products error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to search products',
     });

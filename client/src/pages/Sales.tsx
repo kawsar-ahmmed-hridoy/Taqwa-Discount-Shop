@@ -8,6 +8,8 @@ interface CartItem {
   productId: number;
   name: string;
   price: number;
+  originalPrice: number;
+  discount: number;
   quantity: number;
   total: number;
 }
@@ -48,7 +50,8 @@ const Sales = () => {
     }
   };
 
-  const addToCart = (product: any) => {
+const addToCart = (product: any) => {
+    const finalPrice = product.discount ? product.sellingPrice * (1 - product.discount / 100) : product.sellingPrice;
     const existingItem = cart.find(item => item.productId === product.id);
     if (existingItem) {
       setCart(cart.map(item =>
@@ -60,9 +63,11 @@ const Sales = () => {
       setCart([...cart, {
         productId: product.id,
         name: product.name,
-        price: product.sellingPrice,
+        price: finalPrice,
+        originalPrice: product.sellingPrice,
+        discount: product.discount || 0,
         quantity: 1,
-        total: product.sellingPrice,
+        total: finalPrice,
       }]);
     }
   };
@@ -89,7 +94,7 @@ const Sales = () => {
   const vat = afterDiscount * 0.05;
   const total = afterDiscount + vat;
 
-  const handleCheckout = async () => {
+const handleCheckout = async () => {
     if (cart.length === 0) {
       toast.error('Cart is empty');
       return;
@@ -99,13 +104,18 @@ const Sales = () => {
       const items = cart.map(item => ({
         productId: item.productId,
         quantity: item.quantity,
+        unitPrice: item.price,
+        discount: item.discount,
       }));
 
       await saleAPI.create({
         items,
         customerId: selectedCustomer,
         paymentMode,
-        discount,
+        additionalDiscount: discount,
+        subtotal,
+        vat,
+        total,
       });
 
       toast.success('Sale completed successfully!');
@@ -159,11 +169,23 @@ const Sales = () => {
             <p className="text-gray-500 text-center py-8">Cart is empty</p>
           ) : (
             <div className="space-y-3">
-              {cart.map(item => (
+{cart.map(item => (
                 <div key={item.productId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-600">BDT {item.price.toFixed(2)}</p>
+                    <div className="text-sm text-gray-600">
+                      <span>BDT {item.price.toFixed(2)}</span>
+                      {item.discount > 0 && (
+                        <span className="ml-2 text-gold-600">
+                          ({item.discount}% off)
+                        </span>
+                      )}
+                      {item.originalPrice > item.price && (
+                        <span className="ml-2 line-through text-gray-400">
+                          BDT {item.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -235,8 +257,8 @@ const Sales = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Discount (%)</label>
+<div>
+              <label className="block text-sm font-medium mb-2">Additional Discount (%)</label>
               <input
                 type="number"
                 min="0"
@@ -245,6 +267,7 @@ const Sales = () => {
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
+              <p className="text-xs text-gray-500 mt-1">Applied to total after product discounts</p>
             </div>
 
             <div className="pt-4 border-t space-y-2">

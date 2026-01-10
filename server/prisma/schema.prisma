@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 enum UserRole {
@@ -67,6 +67,7 @@ model Product {
   brand           String?
   purchasePrice   Float
   sellingPrice    Float
+  discount        Float               @default(0)
   stockQuantity   Int                 @default(0)
   minStockLevel   Int                 @default(10)
   expiryDate      DateTime?
@@ -126,6 +127,7 @@ model SaleItem {
   productId Int
   quantity  Int
   price     Float
+  discount  Float    @default(0)
   total     Float
   sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id])
@@ -157,8 +159,8 @@ model PurchaseOrder {
   status       OrderStatus         @default(PENDING)
   orderDate    DateTime            @default(now())
   deliveryDate DateTime?
-  total        Float
-  notes        String?             @db.Text
+total        Float
+  notes        String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   supplier     Supplier            @relation(fields: [supplierId], references: [id])
@@ -189,8 +191,8 @@ model PurchaseOrderItem {
 model Expense {
   id          Int           @id @default(autoincrement())
   category    String
-  amount      Float
-  description String        @db.Text
+amount      Float
+  description String
   status      ExpenseStatus @default(PENDING)
   userId      Int
   expenseDate DateTime      @default(now())
@@ -207,8 +209,8 @@ model StockAdjustment {
   id         Int      @id @default(autoincrement())
   productId  Int
   quantity   Int
-  type       String
-  reason     String   @db.Text
+type       String
+  reason     String
   createdAt  DateTime @default(now())
   product    Product  @relation(fields: [productId], references: [id])
 
@@ -221,8 +223,8 @@ model AuditLog {
   userId    Int
   action    String
   entity    String
-  entityId  Int?
-  details   String?  @db.Text
+entityId  Int?
+  details   String?
   ipAddress String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
@@ -233,12 +235,14 @@ model AuditLog {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  type      String
-  title     String
-  message   String   @db.Text
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  type            String
+title     String
+  message   String
+  isRead          Boolean  @default(false)
+  relatedEntityType String?
+  relatedEntityId  Int?
+  createdAt       DateTime @default(now())
 
   @@index([isRead])
   @@index([createdAt])
@@ -247,8 +251,8 @@ model Notification {
 
 model Settings {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
-  value     String   @db.Text
+key       String   @unique
+  value     String
   updatedAt DateTime @updatedAt
 
   @@map("settings")
