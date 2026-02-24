@@ -97,73 +97,73 @@ const Suppliers = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="spinner w-12 h-12"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Suppliers</h1>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add Supplier
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Suppliers</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{suppliers.length} suppliers</p>
+        </div>
+        <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
+          <Plus size={18} /> Add Supplier
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {suppliers.map((supplier) => (
-          <div key={supplier.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{supplier.name}</h3>
-                <p className="text-sm text-gray-600">{supplier.contactPerson}</p>
+      {suppliers.length === 0 ? (
+        <div className="empty-state card py-16">
+          <MapPin size={40} className="mx-auto text-gray-200 mb-3" />
+          <p className="font-medium text-gray-500">No suppliers yet</p>
+          <p className="text-sm text-gray-400">Add your first supplier to get started</p>
+          <button onClick={handleAdd} className="btn-primary mt-4">Add Supplier</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {suppliers.map((supplier) => (
+            <div key={supplier.id} className="card card-hover p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
+                  <p className="text-sm text-gray-500">{supplier.contactPerson}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleEdit(supplier)} className="p-2 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors">
+                    <Edit size={16} />
+                  </button>
+                  <button onClick={() => handleDelete(supplier.id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleEdit(supplier)}
-                  className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
-                >
-                  <Edit size={18} />
-                </button>
-                <button
-                  onClick={() => handleDelete(supplier.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Phone size={16} />
-                <span>{supplier.phone}</span>
-              </div>
-              {supplier.email && (
+              <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail size={16} />
-                  <span>{supplier.email}</span>
+                  <Phone size={14} className="text-primary-400" />
+                  <span>{supplier.phone}</span>
                 </div>
-              )}
-              {supplier.address && (
-                <div className="flex items-start gap-2 text-sm text-gray-600">
-                  <MapPin size={16} className="mt-1 flex-shrink-0" />
-                  <span>{supplier.address}</span>
-                </div>
-              )}
+                {supplier.email && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Mail size={14} className="text-primary-400" />
+                    <span className="truncate">{supplier.email}</span>
+                  </div>
+                )}
+                {supplier.address && (
+                  <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin size={14} className="mt-0.5 flex-shrink-0 text-primary-400" />
+                    <span>{supplier.address}</span>
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400">
+                Added {new Date(supplier.createdAt).toLocaleDateString()}
+              </div>
             </div>
-
-            <div className="mt-4 pt-4 border-t text-xs text-gray-500">
-              Added {new Date(supplier.createdAt).toLocaleDateString()}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {suppliers.length === 0 && (
         <div className="bg-white rounded-lg shadow-sm p-12 text-center">
@@ -173,78 +173,40 @@ const Suppliers = () => {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                {selectedSupplier ? 'Edit Supplier' : 'Add New Supplier'}
-              </h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Company Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Contact Person *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Phone *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Address</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                  >
-                    {selectedSupplier ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
+        <div className="modal-overlay">
+          <div className="modal-content max-w-md w-full">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">{selectedSupplier ? 'Edit Supplier' : 'Add New Supplier'}</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <Plus size={18} className="rotate-45" />
+              </button>
             </div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="label">Company Name *</label>
+                <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label">Contact Person *</label>
+                <input type="text" required value={formData.contactPerson} onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label">Phone *</label>
+                <input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="input-field" />
+              </div>
+              <div>
+                <label className="label">Email</label>
+                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="input-field" placeholder="Optional" />
+              </div>
+              <div>
+                <label className="label">Address</label>
+                <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={3} className="input-field" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" className="btn-primary flex-1">{selectedSupplier ? 'Update' : 'Create'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -159,97 +159,94 @@ const Reports = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="spinner w-12 h-12"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={exportToPDF}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <Download size={20} />
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Reports & Analytics</h1>
+          <p className="text-gray-500 text-sm mt-1">Generate and export business performance reports</p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={exportToPDF} className="btn-secondary flex items-center gap-2">
+            <Download size={18} />
             Export PDF
           </button>
-          <button
-            onClick={exportToExcel}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-          >
-            <Download size={20} />
+          <button onClick={exportToExcel} className="btn-success flex items-center gap-2">
+            <Download size={18} />
             Export Excel
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <button
           onClick={() => setReportType('sales')}
-          className={`p-6 rounded-lg border-2 transition-all ${
-            reportType === 'sales'
-              ? 'border-primary-600 bg-primary-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
+          className={`card text-left p-6 transition-all border-2 ${
+            reportType === 'sales' ? 'border-primary-500 bg-primary-50' : 'border-transparent hover:border-gray-200'
           }`}
         >
-          <TrendingUp className={reportType === 'sales' ? 'text-primary-600' : 'text-gray-400'} size={32} />
-          <h3 className="text-lg font-semibold mt-3">Sales Report</h3>
-          <p className="text-sm text-gray-600 mt-1">Revenue and transaction analysis</p>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${reportType === 'sales' ? 'bg-primary-100' : 'bg-gray-100'}`}>
+            <TrendingUp className={reportType === 'sales' ? 'text-primary-600' : 'text-gray-500'} size={24} />
+          </div>
+          <h3 className="text-base font-semibold text-gray-900">Sales Report</h3>
+          <p className="text-sm text-gray-500 mt-1">Revenue and transaction analysis</p>
         </button>
 
         <button
           onClick={() => setReportType('inventory')}
-          className={`p-6 rounded-lg border-2 transition-all ${
-            reportType === 'inventory'
-              ? 'border-primary-600 bg-primary-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
+          className={`card text-left p-6 transition-all border-2 ${
+            reportType === 'inventory' ? 'border-primary-500 bg-primary-50' : 'border-transparent hover:border-gray-200'
           }`}
         >
-          <Package className={reportType === 'inventory' ? 'text-primary-600' : 'text-gray-400'} size={32} />
-          <h3 className="text-lg font-semibold mt-3">Inventory Report</h3>
-          <p className="text-sm text-gray-600 mt-1">Stock levels and product analysis</p>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${reportType === 'inventory' ? 'bg-primary-100' : 'bg-gray-100'}`}>
+            <Package className={reportType === 'inventory' ? 'text-primary-600' : 'text-gray-500'} size={24} />
+          </div>
+          <h3 className="text-base font-semibold text-gray-900">Inventory Report</h3>
+          <p className="text-sm text-gray-500 mt-1">Stock levels and product analysis</p>
         </button>
 
         <button
           onClick={() => setReportType('expenses')}
-          className={`p-6 rounded-lg border-2 transition-all ${
-            reportType === 'expenses'
-              ? 'border-primary-600 bg-primary-50'
-              : 'border-gray-200 bg-white hover:border-gray-300'
+          className={`card text-left p-6 transition-all border-2 ${
+            reportType === 'expenses' ? 'border-primary-500 bg-primary-50' : 'border-transparent hover:border-gray-200'
           }`}
         >
-          <DollarSign className={reportType === 'expenses' ? 'text-primary-600' : 'text-gray-400'} size={32} />
-          <h3 className="text-lg font-semibold mt-3">Expense Report</h3>
-          <p className="text-sm text-gray-600 mt-1">Spending and cost analysis</p>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${reportType === 'expenses' ? 'bg-primary-100' : 'bg-gray-100'}`}>
+            <DollarSign className={reportType === 'expenses' ? 'text-primary-600' : 'text-gray-500'} size={24} />
+          </div>
+          <h3 className="text-base font-semibold text-gray-900">Expense Report</h3>
+          <p className="text-sm text-gray-500 mt-1">Spending and cost analysis</p>
         </button>
       </div>
 
       {reportType !== 'inventory' && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Calendar size={20} />
+        <div className="card p-5">
+          <h3 className="section-title flex items-center gap-2 mb-4">
+            <Calendar size={18} className="text-primary-500" />
             Date Range
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Start Date</label>
+              <label className="label">Start Date</label>
               <input
                 type="date"
                 value={dateRange.startDate}
                 onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="input-field"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">End Date</label>
+              <label className="label">End Date</label>
               <input
                 type="date"
                 value={dateRange.endDate}
                 onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                className="input-field"
               />
             </div>
           </div>
@@ -258,27 +255,27 @@ const Reports = () => {
 
       {reportData && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {reportType === 'sales' && reportData.summary && (
               <>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Sales</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Sales</p>
                   <p className="text-2xl font-bold text-gray-900 mt-2">{reportData.summary.totalSales}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Revenue</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Revenue</p>
                   <p className="text-2xl font-bold text-green-600 mt-2">
                     BDT {reportData.summary.totalRevenue.toFixed(2)}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Discount</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Discount</p>
                   <p className="text-2xl font-bold text-red-600 mt-2">
                     BDT {reportData.summary.totalDiscount.toFixed(2)}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total VAT</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total VAT</p>
                   <p className="text-2xl font-bold text-blue-600 mt-2">
                     BDT {reportData.summary.totalVAT.toFixed(2)}
                   </p>
@@ -287,30 +284,30 @@ const Reports = () => {
             )}
             {reportType === 'inventory' && reportData.summary && (
               <>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Products</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Products</p>
                   <p className="text-2xl font-bold text-gray-900 mt-2">{reportData.summary.totalProducts}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Value</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Value</p>
                   <p className="text-2xl font-bold text-green-600 mt-2">
                     BDT {reportData.summary.totalValue.toFixed(2)}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Low Stock Items</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Low Stock Items</p>
                   <p className="text-2xl font-bold text-red-600 mt-2">{reportData.summary.lowStockItems}</p>
                 </div>
               </>
             )}
             {reportType === 'expenses' && reportData.summary && (
               <>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Expenses</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Expenses</p>
                   <p className="text-2xl font-bold text-gray-900 mt-2">{reportData.summary.totalExpenses}</p>
                 </div>
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                  <p className="text-sm text-gray-600">Total Amount</p>
+                <div className="card p-5">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Amount</p>
                   <p className="text-2xl font-bold text-red-600 mt-2">
                     BDT {reportData.summary.totalAmount.toFixed(2)}
                   </p>
@@ -320,8 +317,8 @@ const Reports = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">
+            <div className="card p-5">
+              <h3 className="section-title mb-4">
                 {reportType === 'sales' ? 'Sales Trend' : reportType === 'inventory' ? 'Products by Category' : 'Expenses by Category'}
               </h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -365,8 +362,8 @@ const Reports = () => {
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Transactions</h3>
+            <div className="card p-5">
+              <h3 className="section-title mb-4">Recent Transactions</h3>
               <div className="space-y-3 max-h-[300px] overflow-y-auto">
                 {reportType === 'sales' && reportData.sales?.slice(0, 5).map((sale: any) => (
                   <div key={sale.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { productAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Edit, Trash2, AlertCircle, Filter, Camera, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Filter, Camera, X, Package } from 'lucide-react';
 import ProductModal from '../components/ProductModal';
 import BarcodeScanner from '../components/BarcodeScanner';
 
@@ -100,10 +100,6 @@ const fetchProducts = async () => {
     toast.success('Barcode scanned successfully');
   };
 
-const handleSearch = async () => {
-    filterProducts();
-  };
-
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
@@ -147,73 +143,67 @@ const handleModalClose = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="spinner w-12 h-12"></div>
       </div>
     );
   }
 
 return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Products</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{filteredProducts.length} of {products.length} products</p>
+        </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowScanner(true)}
-            className="flex items-center gap-2 bg-gold-600 text-white px-4 py-2 rounded-lg hover:bg-gold-700 transition-colors"
+            className="btn-secondary flex items-center gap-2"
           >
-            <Camera size={20} />
+            <Camera size={18} />
             Scan Barcode
           </button>
           <button
             onClick={handleAdd}
-            className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            className="btn-primary flex items-center gap-2"
           >
-            <Plus size={20} />
+            <Plus size={18} />
             Add Product
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-4 flex-1">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Search products by name, SKU, barcode, or brand..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Filter size={20} />
-              Filters
-            </button>
+      <div className="card p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-[260px] relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by name, SKU, barcode, or brand..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field pl-10"
+            />
           </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn-secondary flex items-center gap-2 ${showFilters ? 'bg-primary-50 border-primary-300 text-primary-700' : ''}`}
+          >
+            <Filter size={16} />
+            Filters
+          </button>
           {(searchQuery || selectedCategory !== 'all' || stockFilter !== 'all') && (
-            <button
-              onClick={clearFilters}
-              className="text-sm text-primary-600 hover:text-primary-700"
-            >
-              Clear all
+            <button onClick={clearFilters} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium">
+              <X size={14} /> Clear filters
             </button>
           )}
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-4 border-t border-gray-100">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
+              <label className="label">Category</label>
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="input-field">
                 <option value="all">All Categories</option>
                 {categories.map(category => (
                   <option key={category.id} value={category.id}>{category.name}</option>
@@ -221,103 +211,81 @@ return (
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
-              <select
-                value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              >
+              <label className="label">Stock Status</label>
+              <select value={stockFilter} onChange={(e) => setStockFilter(e.target.value)} className="input-field">
                 <option value="all">All Products</option>
                 <option value="available">In Stock</option>
                 <option value="low">Low Stock</option>
                 <option value="out">Out of Stock</option>
               </select>
             </div>
-            <div className="flex items-end">
-              <div className="text-sm text-gray-600">
-                Showing {filteredProducts.length} of {products.length} products
-              </div>
-            </div>
           </div>
         )}
       </div>
 
-<div className="bg-white rounded-lg shadow-sm overflow-hidden">
+<div className="table-container">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SKU / Barcode
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th>Product</th>
+                <th>SKU / Barcode</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {filteredProducts.map((product) => {
                 const stockStatus = getStockStatus(product);
                 return (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        {product.brand && <div className="text-xs text-gray-500">{product.brand}</div>}
-                        {product.discount && (
-                          <div className="text-xs text-gold-600 font-medium">Discount: {product.discount}%</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{product.sku}</div>
-                      {product.barcode && <div className="text-xs text-gray-500">{product.barcode}</div>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-800">
-                        {product.category.name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">BDT {product.sellingPrice.toFixed(2)}</div>
-                      <div className="text-xs text-gray-500">Cost: {product.purchasePrice.toFixed(2)}</div>
-                      {product.discount && (
-                        <div className="text-xs text-green-600">After discount: BDT {(product.sellingPrice * (1 - product.discount / 100)).toFixed(2)}</div>
+                  <tr key={product.id}>
+                    <td>
+                      <div className="font-medium text-gray-900">{product.name}</div>
+                      {product.brand && <div className="text-xs text-gray-500 mt-0.5">{product.brand}</div>}
+                      {!!product.discount && (
+                        <span className="badge badge-warning mt-1">{product.discount}% off</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${stockStatus.color}`}>
-                          {stockStatus.status}
-                        </span>
-                        <span className="text-sm text-gray-600">{product.stockQuantity} units</span>
+                    <td>
+                      <div className="font-mono text-sm">{product.sku}</div>
+                      {product.barcode && <div className="text-xs text-gray-400 mt-0.5">{product.barcode}</div>}
+                    </td>
+                    <td>
+                      <span className="badge badge-primary">{product.category.name}</span>
+                    </td>
+                    <td>
+                      <div className="font-semibold text-gray-900">BDT {product.sellingPrice.toFixed(2)}</div>
+                      <div className="text-xs text-gray-500">Cost: BDT {product.purchasePrice.toFixed(2)}</div>
+                      {!!product.discount && (
+                        <div className="text-xs text-green-600 font-medium">Final: BDT {(product.sellingPrice * (1 - product.discount / 100)).toFixed(2)}</div>
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex flex-col gap-1">
+                        <span className={`badge ${
+                          stockStatus.status === 'Out of Stock' ? 'badge-danger' :
+                          stockStatus.status === 'Low Stock' ? 'badge-warning' : 'badge-success'
+                        }`}>{stockStatus.status}</span>
+                        <span className="text-xs text-gray-500">{product.stockQuantity} units</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
+                    <td>
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleEdit(product)}
-                          className="text-primary-600 hover:text-primary-900"
+                          className="p-2 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors"
+                          title="Edit"
                         >
-                          <Edit size={18} />
+                          <Edit size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(product.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                          title="Delete"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -328,8 +296,10 @@ return (
           </table>
         </div>
         {filteredProducts.length === 0 && (
-          <div className="text-center py-8">
-            <div className="text-gray-500">No products found matching your criteria</div>
+          <div className="empty-state">
+            <Package size={40} className="mx-auto text-gray-300 mb-3" />
+            <p className="font-medium text-gray-600">No products found</p>
+            <p className="text-sm text-gray-400">Try adjusting your search or filters</p>
           </div>
         )}
       </div>
@@ -342,8 +312,8 @@ return (
       )}
 
       {showScanner && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-lg w-full mx-4">
+        <div className="modal-overlay">
+          <div className="modal-content max-w-lg w-full">
             <BarcodeScanner
               onScan={handleBarcodeScan}
               onClose={() => setShowScanner(false)}

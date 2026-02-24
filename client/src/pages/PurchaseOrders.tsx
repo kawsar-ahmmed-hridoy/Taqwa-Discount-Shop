@@ -123,12 +123,12 @@ const PurchaseOrders = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    const styles = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      DELIVERED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800',
+    const map: Record<string, string> = {
+      PENDING: 'badge-warning',
+      DELIVERED: 'badge-success',
+      CANCELLED: 'badge-danger',
     };
-    return styles[status as keyof typeof styles] || styles.PENDING;
+    return map[status] || 'badge-warning';
   };
 
   const getStatusIcon = (status: string) => {
@@ -145,191 +145,132 @@ const PurchaseOrders = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="spinner w-12 h-12"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
-        >
-          <Plus size={20} />
-          Create Order
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Purchase Orders</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{orders.length} orders</p>
+        </div>
+        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
+          <Plus size={18} /> Create Order
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-4">
-        <div className="flex gap-2">
+      <div className="card p-4">
+        <div className="flex flex-wrap gap-2">
           {['all', 'PENDING', 'DELIVERED', 'CANCELLED'].map((status) => (
             <button
               key={status}
-              onClick={() => {
-                setFilterStatus(status);
-                fetchOrders();
-              }}
-              className={`px-4 py-2 rounded-lg font-medium ${
-                filterStatus === status
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              onClick={() => { setFilterStatus(status); fetchOrders(); }}
+              className={`filter-chip ${filterStatus === status ? 'filter-chip-active' : 'filter-chip-inactive'}`}
             >
-              {status === 'all' ? 'All' : status}
+              {status === 'all' ? 'All Orders' : status.charAt(0) + status.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {orders.map((order) => (
-          <div key={order.id} className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">{order.orderNo}</h3>
-                <p className="text-sm text-gray-600">{order.supplier.name}</p>
+      {orders.length === 0 ? (
+        <div className="empty-state card py-16">
+          <Package size={40} className="mx-auto text-gray-200 mb-3" />
+          <p className="font-medium text-gray-500">No purchase orders found</p>
+          <button onClick={() => setShowModal(true)} className="btn-primary mt-4">Create Order</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {orders.map((order) => (
+            <div key={order.id} className="card p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{order.orderNo}</h3>
+                  <p className="text-sm text-gray-500">{order.supplier.name}</p>
+                </div>
+                <span className={`badge ${getStatusBadge(order.status)} flex items-center gap-1`}>
+                  {getStatusIcon(order.status)}
+                  {order.status}
+                </span>
               </div>
-              <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(order.status)}`}>
-                {getStatusIcon(order.status)}
-                {order.status}
-              </span>
-            </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Order Date:</span>
-                <span className="font-medium">{new Date(order.orderDate).toLocaleDateString()}</span>
+              <div className="space-y-1.5 mb-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Order Date</span>
+                  <span className="font-medium">{new Date(order.orderDate).toLocaleDateString()}</span>
+                </div>
+                {order.deliveryDate && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Delivered</span>
+                    <span className="font-medium text-green-600">{new Date(order.deliveryDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Items</span>
+                  <span className="font-medium">{order.items.length}</span>
+                </div>
               </div>
-              {order.deliveryDate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Delivery Date:</span>
-                  <span className="font-medium">{new Date(order.deliveryDate).toLocaleDateString()}</span>
+
+              <div className="flex items-center justify-between py-3 border-t border-gray-100 mb-3">
+                <span className="text-sm text-gray-500">Total</span>
+                <span className="text-lg font-bold text-gray-900">BDT {order.total.toFixed(2)}</span>
+              </div>
+
+              {order.status === 'PENDING' && (
+                <div className="flex gap-2">
+                  <button onClick={() => updateOrderStatus(order.id, 'DELIVERED')} className="flex-1 btn-success flex items-center justify-center gap-2 py-2">
+                    <Truck size={15} /> Mark Delivered
+                  </button>
+                  <button onClick={() => updateOrderStatus(order.id, 'CANCELLED')} className="flex-1 btn-danger flex items-center justify-center gap-2 py-2">
+                    <XCircle size={15} /> Cancel
+                  </button>
                 </div>
               )}
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Items:</span>
-                <span className="font-medium">{order.items.length}</span>
-              </div>
             </div>
-
-            <div className="border-t pt-4 mb-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Amount:</span>
-                <span className="text-xl font-bold text-gray-900">BDT {order.total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {order.status === 'PENDING' && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
-                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-                >
-                  <Truck size={16} />
-                  Mark Delivered
-                </button>
-                <button
-                  onClick={() => updateOrderStatus(order.id, 'CANCELLED')}
-                  className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
-                >
-                  <XCircle size={16} />
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {orders.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-          <Package size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">No purchase orders found</p>
-          <p className="text-gray-400 mt-2">Create your first purchase order to get started</p>
+          ))}
         </div>
       )}
 
-      {/* Create Order Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6">
-              <h2 className="text-xl font-semibold">Create Purchase Order</h2>
+        <div className="modal-overlay">
+          <div className="modal-content max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">Create Purchase Order</h2>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+                <XCircle size={18} />
+              </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">
               <div>
-                <label className="block text-sm font-medium mb-2">Supplier *</label>
-                <select
-                  required
-                  value={formData.supplierId}
-                  onChange={(e) => setFormData({ ...formData, supplierId: Number(e.target.value) })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value={0}>Select Supplier</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </option>
-                  ))}
+                <label className="label">Supplier *</label>
+                <select required value={formData.supplierId} onChange={(e) => setFormData({ ...formData, supplierId: Number(e.target.value) })} className="input-field">
+                  <option value={0} disabled>Select Supplier</option>
+                  {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium">Order Items *</label>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    + Add Item
+                  <label className="label">Order Items *</label>
+                  <button type="button" onClick={addItem} className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                    <Plus size={14} /> Add Item
                   </button>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {formData.items.map((item, index) => (
-                    <div key={index} className="flex gap-3 items-start">
-                      <select
-                        required
-                        value={item.productId}
-                        onChange={(e) => updateItem(index, 'productId', Number(e.target.value))}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option value={0}>Select Product</option>
-                        {products.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
+                    <div key={index} className="flex gap-2 items-start">
+                      <select required value={item.productId} onChange={(e) => updateItem(index, 'productId', Number(e.target.value))} className="input-field flex-1">
+                        <option value={0} disabled>Select Product</option>
+                        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        placeholder="Qty"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
-                        className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
-                      <input
-                        type="number"
-                        required
-                        min="0"
-                        step="0.01"
-                        placeholder="Price"
-                        value={item.price}
-                        onChange={(e) => updateItem(index, 'price', Number(e.target.value))}
-                        className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                      />
+                      <input type="number" required min="1" placeholder="Qty" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))} className="input-field w-20" />
+                      <input type="number" required min="0" step="0.01" placeholder="Price" value={item.price} onChange={(e) => updateItem(index, 'price', Number(e.target.value))} className="input-field w-28" />
                       {formData.items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <XCircle size={20} />
+                        <button type="button" onClick={() => removeItem(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg mt-0.5">
+                          <XCircle size={18} />
                         </button>
                       )}
                     </div>
@@ -338,30 +279,13 @@ const PurchaseOrders = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Notes</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Additional notes or instructions..."
-                />
+                <label className="label">Notes</label>
+                <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} className="input-field" placeholder="Additional notes..." />
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                >
-                  Create Order
-                </button>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" className="btn-primary flex-1">Create Order</button>
               </div>
             </form>
           </div>
