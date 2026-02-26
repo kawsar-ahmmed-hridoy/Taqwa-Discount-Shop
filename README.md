@@ -65,7 +65,7 @@ npm install
 Create `.env` file in server directory:
 
 ```env
-DATABASE_URL="mysql://root:password@localhost:3306/takowa_discount_shop"
+DATABASE_URL="mysql://root:password@localhost:.../takowa_discount_shop"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 JWT_EXPIRES_IN="24h"
 PORT=5000
@@ -110,16 +110,16 @@ npm run dev
 After running the seed script:
 
 **Owner:**
-- Email: owner@takowa.com
-- Password: owner123
+- Email: 
+- Password: 
 
 **Manager:**
-- Email: manager@takowa.com
-- Password: manager123
+- Email: 
+- Password: 
 
 **Staff:**
-- Email: staff@takowa.com
-- Password: staff123
+- Email: 
+- Password: 
 
 ## Project Structure
 
