@@ -1,63 +1,63 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { UserRole } from '@prisma/client';
-    
+import { verifyToken, extractToken } from '../utils';
+import { RequestWithUser, UserRole } from '../types';
+import { HTTP_STATUS, MESSAGES } from '../constants';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    email: string;
-    role: UserRole;
-  };
-}
 
-export const authenticate = (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const authenticate = (req: Request, res: Response, next: NextFunction): any => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    const token = extractToken(authHeader);
 
     if (!token) {
-      return res.status(401).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: 'Authentication required',
+        message: MESSAGES.UNAUTHORIZED,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: number;
-      email: string;
-      role: UserRole;
-    };
+    const user = verifyToken(token);
 
-    req.user = decoded;
-    return next();
+    if (!user) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.INVALID_TOKEN,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
+      });
+    }
+
+    (req as RequestWithUser).user = user;
+    next();
   } catch (error) {
-    return res.status(401).json({
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
       success: false,
-      message: 'Invalid or expired token',
+      message: MESSAGES.TOKEN_EXPIRED,
+      statusCode: HTTP_STATUS.UNAUTHORIZED,
     });
   }
 };
 
-export const authorize = (...roles: UserRole[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({
+
+export const authorize = (...allowedRoles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction): any => {
+    const userReq = req as RequestWithUser;
+    if (!userReq.user) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         success: false,
-        message: 'Authentication required',
+        message: MESSAGES.UNAUTHORIZED,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
       });
     }
 
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+    if (!allowedRoles.includes(userReq.user.role)) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: 'Insufficient permissions',
+        message: MESSAGES.FORBIDDEN,
+        statusCode: HTTP_STATUS.FORBIDDEN,
       });
     }
 
-    return next();
+    next();
   };
 };
