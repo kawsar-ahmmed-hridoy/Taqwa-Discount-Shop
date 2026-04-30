@@ -65,19 +65,24 @@ npm install
 Create `.env` file in server directory:
 
 ```env
-DATABASE_URL="mysql://root:password@localhost:.../takowa_discount_shop"
+# Option A - MySQL (production-like)
+DATABASE_URL="mysql://root:password@localhost:3306/takowa_discount_shop"
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 JWT_EXPIRES_IN="24h"
 PORT=5000
 NODE_ENV=development
+
+# Option B - SQLite (quick local dev - already configured in prisma/schema.prisma)
+# If you prefer SQLite for local development, ensure `server/prisma/dev.db` exists (it is checked into this repo).
+# You can keep the same `.env` but Prisma will use the datasource defined in `prisma/schema.prisma`.
 ```
 
 Setup database:
 
 ```bash
 npx prisma generate
-npx prisma db push
-npm run seed
+npx prisma db push            # pushes Prisma schema to configured datasource (SQLite by default)
+npm run seed                  # seeds initial users, products, suppliers, settings
 ```
 
 Start server:

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { staffAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Search, Shield, Users } from 'lucide-react';
 
 interface Staff {
   id: number;
@@ -12,217 +12,419 @@ interface Staff {
   createdAt: string;
 }
 
-const Staff = () => {
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+/* ─── Primitives ──────────────────────────────────────────────────────────── */
+const F: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
+
+const inp: React.CSSProperties = {
+  ...F, background: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: 8, color: 'var(--text)', fontSize: 13,
+  padding: '9px 12px', outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const ROLE_CONFIG = {
+  OWNER:   { label: 'Owner',   color: '#c084fc', bg: 'rgba(192,132,252,0.1)', dot: '#a855f7' },
+  MANAGER: { label: 'Manager', color: '#6ea8fe', bg: 'rgba(110,168,254,0.1)', dot: '#3b82f6' },
+  STAFF:   { label: 'Staff',   color: '#34d399', bg: 'rgba(52,211,153,0.1)',  dot: '#10b981' },
+};
+
+const RoleBadge = ({ role }: { role: keyof typeof ROLE_CONFIG }) => {
+  const c = ROLE_CONFIG[role];
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
+      padding: '3px 9px', borderRadius: 20,
+      background: c.bg, color: c.color, border: `1px solid ${c.dot}30` }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: c.dot }} />
+      {c.label}
+    </span>
+  );
+};
+
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <p style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.05em',
+    textTransform: 'uppercase', margin: '0 0 6px' }}>{children}</p>
+);
+
+/* ─── Main ────────────────────────────────────────────────────────────────── */
+const StaffPage = () => {
+  const [staff, setStaff]               = useState<Staff[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [showModal, setShowModal]       = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [search, setSearch]             = useState('');
+  const [filterRole, setFilterRole]     = useState<string>('all');
+  const [deleteId, setDeleteId]         = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
-    email: '',
-    fullName: '',
-    password: '',
+    email: '', fullName: '', password: '',
     role: 'STAFF' as 'OWNER' | 'MANAGER' | 'STAFF',
     isActive: true,
   });
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
+  useEffect(() => { fetchStaff(); }, []);
 
   const fetchStaff = async () => {
     try {
-      const response = await staffAPI.getAll();
-      setStaff(response.data.data);
-    } catch (error) {
-      toast.error('Failed to fetch staff'+error);
-    } finally {
-      setLoading(false);
-    }
+      const res = await staffAPI.getAll();
+      setStaff(res.data.data);
+    } catch { toast.error('Failed to fetch staff'); }
+    finally { setLoading(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (selectedStaff) {
-        const updateData: any = {
-          fullName: formData.fullName,
-          role: formData.role,
-          isActive: formData.isActive,
-        };
-        if (formData.password) {
-          updateData.password = formData.password;
-        }
-        await staffAPI.update(selectedStaff.id, updateData);
-        toast.success('Staff updated successfully');
+        const payload: any = { fullName: formData.fullName, role: formData.role, isActive: formData.isActive };
+        if (formData.password) payload.password = formData.password;
+        await staffAPI.update(selectedStaff.id, payload);
+        toast.success('Staff updated');
       } else {
         await staffAPI.create(formData);
-        toast.success('Staff created successfully');
+        toast.success('Staff created');
       }
-      setShowModal(false);
-      resetForm();
+      closeModal();
       fetchStaff();
-    } catch (error) {
-      toast.error('Operation failed'+error);
-    }
+    } catch { toast.error('Operation failed'); }
   };
 
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      fullName: '',
-      password: '',
-      role: 'STAFF',
-      isActive: true,
-    });
-    setSelectedStaff(null);
-  };
-
-  const handleEdit = (staffMember: Staff) => {
-    setSelectedStaff(staffMember);
-    setFormData({
-      email: staffMember.email,
-      fullName: staffMember.fullName,
-      password: '',
-      role: staffMember.role,
-      isActive: staffMember.isActive,
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this staff member?')) return;
-    
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await staffAPI.delete(id);
-      toast.success('Staff deleted successfully');
+      await staffAPI.delete(deleteId);
+      toast.success('Staff removed');
+      setDeleteId(null);
       fetchStaff();
-    } catch (error) {
-      toast.error('Failed to delete staff'+error);
-    }
+    } catch { toast.error('Failed to delete'); }
   };
 
-  const handleAdd = () => {
-    resetForm();
+  const openEdit = (m: Staff) => {
+    setSelectedStaff(m);
+    setFormData({ email: m.email, fullName: m.fullName, password: '', role: m.role, isActive: m.isActive });
     setShowModal(true);
   };
 
-  const getRoleBadge = (role: string) => {
-    const map: Record<string, string> = {
-      OWNER: 'badge-danger',
-      MANAGER: 'badge-primary',
-      STAFF: 'badge-success',
-    };
-    return map[role] || 'badge-info';
+  const openAdd = () => {
+    setSelectedStaff(null);
+    setFormData({ email: '', fullName: '', password: '', role: 'STAFF', isActive: true });
+    setShowModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="spinner w-12 h-12"></div>
-      </div>
-    );
-  }
+  const closeModal = () => { setShowModal(false); setSelectedStaff(null); };
+
+  const filtered = staff.filter(m =>
+    (filterRole === 'all' || m.role === filterRole) &&
+    (m.fullName.toLowerCase().includes(search.toLowerCase()) ||
+     m.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const counts = {
+    total: staff.length,
+    active: staff.filter(m => m.isActive).length,
+    owners: staff.filter(m => m.role === 'OWNER').length,
+    managers: staff.filter(m => m.role === 'MANAGER').length,
+  };
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+      <div className="spinner w-10 h-10" />
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
+    <div style={{ ...F, color: 'var(--text)' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>
         <div>
-          <h1 className="page-title">Staff Management</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{staff.length} team members</p>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Staff</h1>
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{staff.length} team members</p>
         </div>
-        <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Staff
+        <button onClick={openAdd}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)',
+            color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          <Plus size={15} /> Add Staff
         </button>
       </div>
 
-      {staff.length === 0 ? (
-        <div className="empty-state card py-16">
-          <UserCheck size={40} className="mx-auto text-gray-200 mb-3" />
-          <p className="font-medium text-gray-500">No staff members yet</p>
-          <button onClick={handleAdd} className="btn-primary mt-4">Add Staff</button>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 18 }}>
+        {[
+          { label: 'Total',    value: counts.total },
+          { label: 'Active',   value: counts.active },
+          { label: 'Owners',   value: counts.owners },
+          { label: 'Managers', value: counts.managers },
+        ].map(s => (
+          <div key={s.label} style={{ background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 10, padding: '13px 16px' }}>
+            <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase',
+              letterSpacing: '0.05em', margin: '0 0 4px' }}>{s.label}</p>
+            <p style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search size={13} style={{ position: 'absolute', left: 10, top: '50%',
+            transform: 'translateY(-50%)', color: '#4b5563' }} />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            style={{ ...inp, paddingLeft: 30 }} />
+        </div>
+        <div style={{ display: 'flex', gap: 4, background: 'var(--panel-bg)', padding: 4,
+          borderRadius: 9, border: '1px solid rgba(255,255,255,0.06)' }}>
+          {['all', 'OWNER', 'MANAGER', 'STAFF'].map(r => (
+            <button key={r} onClick={() => setFilterRole(r)}
+              style={{ ...F, fontSize: 12, fontWeight: 500, padding: '5px 12px',
+                borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.12s',
+                background: filterRole === r ? 'var(--accent)' : 'transparent',
+                color: filterRole === r ? '#fff' : 'var(--muted)' }}>
+              {r === 'all' ? 'All' : r.charAt(0) + r.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      {filtered.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 12, padding: '60px 0', gap: 10 }}>
+          <Users size={34} color="var(--muted)" />
+          <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>No staff members found</p>
+          <button onClick={openAdd}
+            style={{ ...F, background: 'var(--accent)', color: '#fff', border: 'none',
+              borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
+            Add Staff
+          </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {staff.map((member) => (
-            <div key={member.id} className="card card-hover p-5">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-11 h-11 gradient-primary rounded-full flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">
-                  {member.fullName.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 truncate">{member.fullName}</h3>
-                  <p className="text-sm text-gray-500 truncate">{member.email}</p>
-                </div>
-                <div className="flex items-center">
-                  {member.isActive ? (
-                    <UserCheck className="text-green-500" size={18} />
-                  ) : (
-                    <UserX className="text-red-400" size={18} />
-                  )}
-                </div>
-              </div>
+        <div style={{ background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {['Member', 'Role', 'Status', 'Joined', ''].map((h, i) => (
+                  <th key={i} style={{ padding: '11px 16px', textAlign: i >= 3 ? 'right' : 'left',
+                    fontSize: 11, fontWeight: 600, color: 'var(--muted)',
+                    letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((m, idx) => {
+                const initials = m.fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                return (
+                  <tr key={m.id}
+                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      transition: 'background 0.1s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`badge ${getRoleBadge(member.role)}`}>{member.role}</span>
-                {!member.isActive && <span className="badge badge-danger">Inactive</span>}
-              </div>
+                    {/* Member */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                          background: 'linear-gradient(135deg,#1f4ded,#1f6feb)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', margin: 0 }}>{m.fullName}</p>
+                          <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{m.email}</p>
+                        </div>
+                      </div>
+                    </td>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <span className="text-xs text-gray-400">Joined {new Date(member.createdAt).toLocaleDateString()}</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit(member)} className="p-2 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors" title="Edit">
-                    <Edit size={15} />
-                  </button>
-                  <button onClick={() => handleDelete(member.id)} className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors" title="Delete">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+                    {/* Role */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <RoleBadge role={m.role} />
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+                        fontSize: 11, fontWeight: 600,
+                        color: m.isActive ? '#34d399' : 'var(--muted)' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%',
+                          background: m.isActive ? '#10b981' : '#374151' }} />
+                        {m.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+
+                    {/* Joined */}
+                    <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--muted)', textAlign: 'right' }}>
+                      {new Date(m.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                        <button onClick={() => openEdit(m)} title="Edit"
+                          style={{ padding: 6, borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)',
+                            background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#6ea8fe'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(110,168,254,0.3)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                          <Edit size={13} />
+                        </button>
+                        <button onClick={() => setDeleteId(m.id)} title="Delete"
+                          style={{ padding: 6, borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)',
+                            background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#f87171'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(248,113,113,0.3)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div style={{ padding: '9px 16px', borderTop: '1px solid rgba(255,255,255,0.04)',
+            fontSize: 11, color: 'var(--muted)' }}>
+            Showing {filtered.length} of {staff.length} members
+          </div>
         </div>
       )}
 
+      {/* ── Add / Edit Modal ── */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content max-w-md w-full">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">{selectedStaff ? 'Edit Staff Member' : 'Add New Staff Member'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
-                <UserX size={18} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+          <div style={{ ...F, background: '#111318', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14, width: '100%', maxWidth: 420 }}>
+
+            {/* Modal header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8,
+                  background: 'rgba(31,111,235,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Shield size={13} color="#6ea8fe" />
+                </div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f5', margin: 0 }}>
+                  {selectedStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+                </p>
+              </div>
+              <button onClick={closeModal}
+                style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.04)', color: '#6b7280', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={13} />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+
+            {/* Modal body */}
+            <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
               <div>
-                <label className="label">Full Name *</label>
-                <input type="text" required value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} className="input-field" />
+                <Label>Full Name *</Label>
+                <input type="text" required value={formData.fullName} placeholder="e.g. Mahbub Rahman"
+                  onChange={e => setFormData(f => ({ ...f, fullName: e.target.value }))}
+                  style={inp} />
               </div>
+
               <div>
-                <label className="label">Email *</label>
-                <input type="email" required disabled={!!selectedStaff} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="input-field disabled:bg-gray-50" />
+                <Label>Email Address *</Label>
+                <input type="email" required value={formData.email} disabled={!!selectedStaff}
+                  placeholder="staff@example.com"
+                  onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
+                  style={{ ...inp, opacity: selectedStaff ? 0.5 : 1, cursor: selectedStaff ? 'not-allowed' : 'text' }} />
               </div>
+
               <div>
-                <label className="label">Password {selectedStaff ? '(leave blank to keep)' : '*'}</label>
-                <input type="password" required={!selectedStaff} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="input-field" placeholder={selectedStaff ? '••••••••' : ''} />
+                <Label>Password {selectedStaff ? '(leave blank to keep)' : '*'}</Label>
+                <input type="password" required={!selectedStaff} value={formData.password}
+                  placeholder={selectedStaff ? 'Leave blank to keep current' : 'Min. 6 characters'}
+                  onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
+                  style={inp} />
               </div>
+
               <div>
-                <label className="label">Role *</label>
-                <select required value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as any })} className="input-field">
+                <Label>Role *</Label>
+                <select required value={formData.role}
+                  onChange={e => setFormData(f => ({ ...f, role: e.target.value as any }))}
+                  style={inp}>
                   <option value="STAFF">Staff</option>
                   <option value="MANAGER">Manager</option>
                   <option value="OWNER">Owner</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="w-4 h-4 text-primary-600 border-gray-300 rounded" />
-                <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active Account</label>
+
+              {/* Active toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px', background: '#161920', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#d1d5db', margin: 0 }}>Active Account</p>
+                  <p style={{ fontSize: 11, color: '#4b5563', marginTop: 1 }}>Staff can log in when active</p>
+                </div>
+                <button type="button"
+                  onClick={() => setFormData(f => ({ ...f, isActive: !f.isActive }))}
+                  style={{ width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: formData.isActive ? '#1f6feb' : 'rgba(255,255,255,0.08)',
+                    position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                  <span style={{ position: 'absolute', top: 3,
+                    left: formData.isActive ? 21 : 3,
+                    width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                    transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+                </button>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" className="btn-primary flex-1">{selectedStaff ? 'Update' : 'Create'}</button>
+
+              <div style={{ display: 'flex', gap: 8, paddingTop: 2 }}>
+                <button type="button" onClick={closeModal}
+                  style={{ ...F, flex: 1, padding: '9px', borderRadius: 9,
+                    border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
+                    color: '#6b7280', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button type="submit"
+                  style={{ ...F, flex: 2, padding: '9px', borderRadius: 9, border: 'none',
+                    background: '#1f6feb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  {selectedStaff ? 'Save Changes' : 'Create Staff Member'}
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirm Modal ── */}
+      {deleteId !== null && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
+          <div style={{ ...F, background: '#111318', border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 14, width: '100%', maxWidth: 360, padding: '24px' }}>
+            <div style={{ width: 42, height: 42, borderRadius: 11,
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <Trash2 size={18} color="#f87171" />
+            </div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#f0f2f5', margin: '0 0 6px' }}>Remove Staff Member</p>
+            <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px', lineHeight: 1.5 }}>
+              This action cannot be undone. The staff member will lose all access.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setDeleteId(null)}
+                style={{ ...F, flex: 1, padding: '9px', borderRadius: 9,
+                  border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
+                  color: '#6b7280', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete}
+                style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: 'none',
+                  background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -230,4 +432,4 @@ const Staff = () => {
   );
 };
 
-export default Staff;
+export default StaffPage;

@@ -8,45 +8,45 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('owner123', 10);
   const owner = await prisma.user.upsert({
-    where: { email: 'owner@pos.com' },
+    where: { email: 'owner@taqwa.com' },
     update: {},
     create: {
-      email: 'owner@pos.com',
+      email: 'owner@taqwa.com',
       password: hashedPassword,
-      fullName: 'John Owner',
+      fullName: 'Kawsar Ahmmed Hridoy',
       role: UserRole.OWNER,
     },
   });
 
   const managerPassword = await bcrypt.hash('manager123', 10);
   const manager = await prisma.user.upsert({
-    where: { email: 'manager@pos.com' },
+    where: { email: 'manager@taqwa.com' },
     update: {},
     create: {
-      email: 'manager@pos.com',
+      email: 'manager@taqwa.com',
       password: managerPassword,
-      fullName: 'Sarah Manager',
+      fullName: 'Maria Tasnia',
       role: UserRole.MANAGER,
     },
   });
 
   const staffPassword = await bcrypt.hash('staff123', 10);
   const staff = await prisma.user.upsert({
-    where: { email: 'staff@pos.com' },
+    where: { email: 'staff@taqwa.com' },
     update: {},
     create: {
-      email: 'staff@pos.com',
+      email: 'staff@taqwa.com',
       password: staffPassword,
-      fullName: 'Mike Staff',
+      fullName: 'Minhajul Islam Borson',
       role: UserRole.STAFF,
     },
   });
 
   const categories = await Promise.all([
     prisma.category.upsert({
-      where: { name: 'Electronics' },
+      where: { name: 'Cosmetics' },
       update: {},
-      create: { name: 'Electronics' },
+      create: { name: 'Cosmetics' },
     }),
     prisma.category.upsert({
       where: { name: 'Groceries' },
@@ -70,11 +70,11 @@ async function main() {
       where: { sku: 'PRD001' },
       update: {},
       create: {
-        name: 'Wireless Mouse',
+        name: 'Face Wash',
         barcode: '1234567890123',
         sku: 'PRD001',
         categoryId: categories[0].id,
-        brand: 'Logitech',
+        brand: 'Himalaya',
         purchasePrice: 15.00,
         sellingPrice: 25.00,
         stockQuantity: 50,
@@ -85,11 +85,11 @@ async function main() {
       where: { sku: 'PRD002' },
       update: {},
       create: {
-        name: 'USB Cable',
+        name: 'Face Cream',
         barcode: '1234567890124',
         sku: 'PRD002',
         categoryId: categories[0].id,
-        brand: 'Generic',
+        brand: 'Fair & Lovely',
         purchasePrice: 3.00,
         sellingPrice: 7.00,
         stockQuantity: 100,
@@ -131,25 +131,25 @@ async function main() {
 
   const suppliers = await Promise.all([
     prisma.supplier.upsert({
-      where: { phone: '+1234567890' },
+      where: { phone: '+8801234567890' },
       update: {},
       create: {
-        name: 'Tech Supplies Inc',
-        contactPerson: 'David Tech',
-        phone: '+1234567890',
-        email: 'david@techsupplies.com',
-        address: '123 Tech Street, Silicon Valley',
+        name: 'Hasan Cosmetics Supplies',
+        contactPerson: 'Farida Hasan',
+        phone: '+8801234567890',
+        email: 'hasan@cosmetics.com',
+        address: 'Karwan Bazar, Dhaka',
       },
     }),
     prisma.supplier.upsert({
-      where: { phone: '+1234567891' },
+      where: { phone: '+8801234567891' },
       update: {},
       create: {
         name: 'Food Distributors Ltd',
-        contactPerson: 'Emily Food',
-        phone: '+1234567891',
-        email: 'emily@fooddist.com',
-        address: '456 Market Road, New York',
+        contactPerson: 'Rahim Food',
+        phone: '+8801234567891',
+        email: 'rahim@fooddist.com',
+        address: 'Banani, Dhaka',
       },
     }),
   ]);
@@ -159,10 +159,10 @@ async function main() {
       where: { phone: '+8801712345678' },
       update: {},
       create: {
-        name: 'Alice Johnson',
+        name: 'Akij Food Ltd',
         phone: '+8801712345678',
-        email: 'alice@email.com',
-        address: '789 Customer Lane',
+        email: 'akij@food.com',
+        address: 'Baridhara, Dhaka',
         loyaltyPoints: 100,
       },
     }),
@@ -170,10 +170,10 @@ async function main() {
       where: { phone: '+8801712345679' },
       update: {},
       create: {
-        name: 'Bob Smith',
+        name: 'Fazal Food Ltd',
         phone: '+8801712345679',
-        email: 'bob@email.com',
-        address: '321 Buyer Street',
+        email: 'fazal@food.com',
+        address: 'Gulshan, Dhaka',
         loyaltyPoints: 50,
       },
     }),
@@ -199,9 +199,9 @@ async function main() {
 
   console.log('Database seeded successfully!');
   console.log('\nLogin Credentials:');
-  console.log('Owner: owner@pos.com / owner123');
-  console.log('Manager: manager@pos.com / manager123');
-  console.log('Staff: staff@pos.com / staff123');
+  console.log('Owner: owner@taqwa.com / owner123');
+  console.log('Manager: manager@taqwa.com / manager123');
+  console.log('Staff: staff@taqwa.com / staff123');
 }
 
 main()

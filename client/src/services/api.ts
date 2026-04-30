@@ -36,7 +36,10 @@ export const authAPI = {
   logout: () => api.post('/auth/logout'),
   resetPassword: (data: { currentPassword: string; newPassword: string }) =>
     api.post('/auth/reset-password', data),
+  forgotPassword: (data: { email: string }) =>
+    api.post('/auth/forgot-password', data),
   getCurrentUser: () => api.get('/auth/me'),
+  updateProfile: (data: unknown) => api.put('/auth/profile', data),
 };
 
 export const productAPI = {

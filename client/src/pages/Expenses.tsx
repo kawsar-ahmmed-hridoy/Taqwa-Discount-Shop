@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { expenseAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, DollarSign, CheckCircle, XCircle, Clock, Search, TrendingUp, TrendingDown, X } from 'lucide-react';
 
 interface Expense {
   id: number;
@@ -12,271 +12,284 @@ interface Expense {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   expenseDate: string;
   user: { fullName: string };
-  createdAt: string;
 }
 
-const expenseCategories = [
-  'Rent',
-  'Utilities',
-  'Salaries',
-  'Maintenance',
-  'Marketing',
-  'Transportation',
-  'Office Supplies',
-  'Insurance',
-  'Other',
-];
+const CATEGORIES = ['Rent','Utilities','Salaries','Maintenance','Marketing','Transportation','Office Supplies','Insurance','Other'];
 
-const Expenses = () => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const { user } = useAuthStore();
+const STATUS_CFG = {
+  PENDING:  { icon: Clock,        color: 'text-amber-400',  bg: 'bg-amber-400/10 border-amber-400/25',  dot: 'bg-amber-400'  },
+  APPROVED: { icon: CheckCircle,  color: 'text-emerald-400',bg: 'bg-emerald-400/10 border-emerald-400/25',dot: 'bg-emerald-400'},
+  REJECTED: { icon: XCircle,      color: 'text-red-400',    bg: 'bg-red-400/10 border-red-400/25',       dot: 'bg-red-400'    },
+} as const;
 
-  const [formData, setFormData] = useState({
-    category: '',
-    amount: 0,
-    description: '',
-    expenseDate: new Date().toISOString().split('T')[0],
-  });
+const fmt = (n: number) => `৳${n.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  useEffect(() => {
-    fetchExpenses();
-  }, [filterStatus]);
+// ── Stat card ──────────────────────────────────────────────────────────────────
 
-  const fetchExpenses = async () => {
-    try {
-      const params = filterStatus !== 'all' ? { status: filterStatus } : {};
-      const response = await expenseAPI.getAll(params);
-      setExpenses(response.data.data);
-    } catch (error) {
-      toast.error('Failed to fetch expenses'+error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const Stat = ({ label, value, sub, icon: Icon, iconColor }: { label: string; value: string; sub?: string; icon: typeof DollarSign; iconColor: string }) => (
+  <div className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-4 py-4 flex items-start justify-between hover:border-white/[0.09] transition-colors">
+    <div>
+      <p className="text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{label}</p>
+      <p className="text-[21px] font-bold text-[#e2e5eb] mt-1.5 leading-none">{value}</p>
+      {sub && <p className="text-[11px] text-[#3a404f] mt-1.5">{sub}</p>}
+    </div>
+    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconColor}`}>
+      <Icon size={15} />
+    </div>
+  </div>
+);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+// ── Add modal ──────────────────────────────────────────────────────────────────
+
+const AddModal = ({ onClose, onSave }: { onClose: () => void; onSave: () => void }) => {
+  const [form, setForm] = useState({ category: '', amount: '', description: '', expenseDate: new Date().toISOString().split('T')[0] });
+  const [saving, setSaving] = useState(false);
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.category || !form.amount) return;
+    setSaving(true);
     try {
-      await expenseAPI.create({
-        ...formData,
-        amount: Number(formData.amount),
-      });
-      toast.success('Expense created successfully');
-      setShowModal(false);
-      resetForm();
-      fetchExpenses();
-    } catch (error) {
-      toast.error('Failed to create expense'+error);
-    }
+      await expenseAPI.create({ ...form, amount: Number(form.amount) });
+      toast.success('Expense submitted');
+      onSave();
+    } catch { toast.error('Failed to create expense'); }
+    finally { setSaving(false); }
   };
-
-  const resetForm = () => {
-    setFormData({
-      category: '',
-      amount: 0,
-      description: '',
-      expenseDate: new Date().toISOString().split('T')[0],
-    });
-  };
-
-  const handleApprove = async (id: number, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      await expenseAPI.approve(id, status);
-      toast.success(`Expense ${status.toLowerCase()} successfully`);
-      fetchExpenses();
-    } catch (error) {
-      toast.error('Failed to update expense status'+error);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const map: Record<string, string> = {
-      PENDING: 'badge-warning',
-      APPROVED: 'badge-success',
-      REJECTED: 'badge-danger',
-    };
-    return map[status] || 'badge-warning';
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return <CheckCircle size={16} />;
-      case 'REJECTED':
-        return <XCircle size={16} />;
-      default:
-        return <Clock size={16} />;
-    }
-  };
-
-  const totalExpenses = expenses
-    .filter((exp) => exp.status === 'APPROVED')
-    .reduce((sum, exp) => sum + exp.amount, 0);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="spinner w-12 h-12"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Expenses</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Track and manage business expenses</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+          <div>
+            <h2 className="text-[15px] font-semibold text-[#f0f2f5]">New Expense</h2>
+            <p className="text-[11.5px] text-[#3a404f] mt-0.5">Submit for approval</p>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
+            <X size={14} />
+          </button>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Expense
+        <form onSubmit={submit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Category</label>
+              <select required value={form.category} onChange={e => set('category', e.target.value)}
+                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all appearance-none">
+                <option value="">Select a category</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Amount (BDT)</label>
+              <input required type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => set('amount', e.target.value)}
+                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Date</label>
+              <input required type="date" value={form.expenseDate} onChange={e => set('expenseDate', e.target.value)}
+                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+            </div>
+            <div className="col-span-2">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Description</label>
+              <textarea required rows={3} placeholder="What was this expense for?" value={form.description} onChange={e => set('description', e.target.value)}
+                className="w-full px-3 py-2.5 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all resize-none" />
+            </div>
+          </div>
+          <div className="flex gap-2.5 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving}
+              className="flex-1 h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all">
+              {saving ? 'Submitting…' : 'Submit'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ── Main ───────────────────────────────────────────────────────────────────────
+
+const Expenses = () => {
+  const [expenses, setExpenses]   = useState<Expense[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [filter, setFilter]       = useState<string>('all');
+  const [search, setSearch]       = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const { user } = useAuthStore();
+
+  const fetch = async () => {
+    setLoading(true);
+    try {
+      const params = filter !== 'all' ? { status: filter } : {};
+      const res = await expenseAPI.getAll(params);
+      setExpenses(res.data.data);
+    } catch { toast.error('Failed to load expenses'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetch(); }, [filter]);
+
+  const approve = async (id: number, status: 'APPROVED' | 'REJECTED') => {
+    try {
+      await expenseAPI.approve(id, status);
+      toast.success(`Expense ${status === 'APPROVED' ? 'approved' : 'rejected'}`);
+      fetch();
+    } catch { toast.error('Failed to update status'); }
+  };
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+
+  const visible = useMemo(() => {
+    const q = search.toLowerCase();
+    return expenses.filter(e =>
+      !q || e.category.toLowerCase().includes(q) || e.description.toLowerCase().includes(q) || e.user.fullName.toLowerCase().includes(q)
+    );
+  }, [expenses, search]);
+
+  const stats = useMemo(() => {
+    const approved = expenses.filter(e => e.status === 'APPROVED').reduce((s, e) => s + e.amount, 0);
+    const pending  = expenses.filter(e => e.status === 'PENDING');
+    const now = new Date();
+    const thisMonth = expenses.filter(e => {
+      const d = new Date(e.expenseDate);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    const lastMonth = expenses.filter(e => {
+      const d = new Date(e.expenseDate);
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear();
+    });
+    const trend = lastMonth.length ? ((thisMonth.length - lastMonth.length) / lastMonth.length) * 100 : null;
+    return { approved, pending: pending.length, thisMonth: thisMonth.length, trend };
+  }, [expenses]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Expenses</h1>
+          <p className="text-[11.5px] text-[#3a404f] mt-0.5">Track and manage business expenses</p>
+        </div>
+        <button onClick={() => setShowModal(true)}
+          className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
+          <Plus size={13} /> Add Expense
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="card p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Approved</p>
-              <h3 className="text-2xl font-bold text-gray-900 mt-1">BDT {totalExpenses.toFixed(2)}</h3>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
-              <DollarSign className="text-green-600" size={22} />
-            </div>
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Pending Review</p>
-              <h3 className="text-2xl font-bold text-gray-900 mt-1">{expenses.filter((e) => e.status === 'PENDING').length}</h3>
-            </div>
-            <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center">
-              <Clock className="text-yellow-600" size={22} />
-            </div>
-          </div>
-        </div>
-        <div className="card p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 font-medium">This Month</p>
-              <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                {expenses.filter((e) => {
-                  const d = new Date(e.expenseDate), n = new Date();
-                  return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
-                }).length}
-              </h3>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-              <DollarSign className="text-blue-600" size={22} />
-            </div>
-          </div>
-        </div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Stat label="Total Approved" value={fmt(stats.approved)} icon={DollarSign} iconColor="bg-emerald-400/10 text-emerald-400" sub="approved expenses" />
+        <Stat label="Pending Review" value={`${stats.pending}`} icon={Clock} iconColor="bg-amber-400/10 text-amber-400" sub={stats.pending === 1 ? 'awaiting decision' : 'awaiting decisions'} />
+        <Stat label="This Month" value={`${stats.thisMonth}`}
+          sub={stats.trend != null ? `${stats.trend >= 0 ? '+' : ''}${stats.trend.toFixed(0)}% vs last month` : 'no prior data'}
+          icon={stats.trend != null && stats.trend < 0 ? TrendingDown : TrendingUp}
+          iconColor="bg-[#1f6feb]/10 text-[#6ea8fe]" />
       </div>
 
-      <div className="card p-4">
-        <div className="flex flex-wrap gap-2">
-          {['all', 'PENDING', 'APPROVED', 'REJECTED'].map((status) => (
-            <button key={status} onClick={() => setFilterStatus(status)} className={`filter-chip ${filterStatus === status ? 'filter-chip-active' : 'filter-chip-inactive'}`}>
-              {status === 'all' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}
+      {/* Filters + search */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+          {(['all', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-3 h-7 text-[12px] font-medium rounded-md transition-all ${filter === s ? 'bg-[#1f6feb] text-white' : 'text-[#3a404f] hover:text-[#c8cdd8]'}`}>
+              {s === 'all' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
+        <div className="relative flex-1 max-w-xs">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3a404f]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search expenses…"
+            className="w-full h-8 pl-8 pr-3 text-[12.5px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all" />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a404f] hover:text-[#c8cdd8]">
+              <X size={11} />
+            </button>
+          )}
+        </div>
+        <span className="text-[11.5px] text-[#3a404f] ml-auto">{visible.length} result{visible.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {expenses.length === 0 ? (
-        <div className="empty-state card py-16">
-          <DollarSign size={40} className="mx-auto text-gray-200 mb-3" />
-          <p className="font-medium text-gray-500">No expenses found</p>
-          <button onClick={() => setShowModal(true)} className="btn-primary mt-4">Add Expense</button>
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#1f6feb] animate-spin" />
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-52 border border-white/[0.055] rounded-xl bg-white/[0.02] gap-3">
+          <DollarSign size={28} className="text-[#3a404f]" />
+          <p className="text-[13px] text-[#3a404f]">{search ? 'No matching expenses' : 'No expenses yet'}</p>
+          {!search && (
+            <button onClick={() => setShowModal(true)} className="text-[12.5px] text-[#6ea8fe] hover:underline">Add one</button>
+          )}
         </div>
       ) : (
-        <div className="table-container">
-          <div className="overflow-x-auto">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Submitted By</th>
-                  <th>Status</th>
-                  {user?.role === 'OWNER' && <th>Actions</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {expenses.map((expense) => (
-                  <tr key={expense.id}>
-                    <td className="text-sm">{new Date(expense.expenseDate).toLocaleDateString()}</td>
-                    <td><span className="badge badge-info">{expense.category}</span></td>
-                    <td className="text-sm max-w-xs truncate">{expense.description}</td>
-                    <td className="font-semibold">BDT {expense.amount.toFixed(2)}</td>
-                    <td className="text-sm text-gray-600">{expense.user.fullName}</td>
-                    <td>
-                      <span className={`badge ${getStatusBadge(expense.status)} flex items-center gap-1 w-fit`}>
-                        {getStatusIcon(expense.status)}
-                        {expense.status.charAt(0) + expense.status.slice(1).toLowerCase()}
+        <div className="border border-white/[0.055] rounded-xl overflow-hidden">
+          <table className="w-full text-[12.5px]">
+            <thead>
+              <tr className="border-b border-white/[0.05]">
+                {['Date', 'Category', 'Description', 'Amount', 'Submitted By', 'Status', ...(user?.role === 'OWNER' ? ['Actions'] : [])].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((exp, i) => {
+                const cfg = STATUS_CFG[exp.status];
+                return (
+                  <tr key={exp.id} className={`border-b border-white/[0.035] hover:bg-white/[0.025] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
+                    <td className="px-4 py-3 text-[#6b7280] whitespace-nowrap">
+                      {new Date(exp.expenseDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-md text-[11.5px] font-medium text-[#6ea8fe] bg-[#1f6feb]/10 border border-[#1f6feb]/20">
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[#c8cdd8] max-w-[200px] truncate" title={exp.description}>{exp.description}</td>
+                    <td className="px-4 py-3 font-semibold text-[#e2e5eb] whitespace-nowrap">{fmt(exp.amount)}</td>
+                    <td className="px-4 py-3 text-[#6b7280]">{exp.user.fullName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11.5px] font-medium border ${cfg.bg} ${cfg.color}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                        {exp.status.charAt(0) + exp.status.slice(1).toLowerCase()}
                       </span>
                     </td>
                     {user?.role === 'OWNER' && (
-                      <td>
-                        {expense.status === 'PENDING' && (
-                          <div className="flex gap-2">
-                            <button onClick={() => handleApprove(expense.id, 'APPROVED')} className="text-xs font-semibold text-green-600 hover:text-green-800 px-2 py-1 rounded hover:bg-green-50">Approve</button>
-                            <button onClick={() => handleApprove(expense.id, 'REJECTED')} className="text-xs font-semibold text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">Reject</button>
+                      <td className="px-4 py-3">
+                        {exp.status === 'PENDING' ? (
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={() => approve(exp.id, 'APPROVED')}
+                              className="flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-semibold text-emerald-400 border border-emerald-400/25 bg-emerald-400/10 rounded-md hover:bg-emerald-400/20 transition-all">
+                              <CheckCircle size={11} /> Approve
+                            </button>
+                            <button onClick={() => approve(exp.id, 'REJECTED')}
+                              className="flex items-center gap-1 px-2.5 py-1 text-[11.5px] font-semibold text-red-400 border border-red-400/25 bg-red-400/10 rounded-md hover:bg-red-400/20 transition-all">
+                              <XCircle size={11} /> Reject
+                            </button>
                           </div>
+                        ) : (
+                          <span className="text-[11px] text-[#3a404f]">—</span>
                         )}
                       </td>
                     )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content max-w-md w-full">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Add New Expense</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
-                <XCircle size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div>
-                <label className="label">Category *</label>
-                <select required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="input-field">
-                  <option value="">Select Category</option>
-                  {expenseCategories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label">Amount (BDT) *</label>
-                <input type="number" required min="0" step="0.01" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })} className="input-field" placeholder="0.00" />
-              </div>
-              <div>
-                <label className="label">Date *</label>
-                <input type="date" required value={formData.expenseDate} onChange={(e) => setFormData({ ...formData, expenseDate: e.target.value })} className="input-field" />
-              </div>
-              <div>
-                <label className="label">Description *</label>
-                <textarea required value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="input-field" placeholder="Enter expense details..." />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" className="btn-primary flex-1">Create</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {showModal && <AddModal onClose={() => setShowModal(false)} onSave={() => { setShowModal(false); fetch(); }} />}
     </div>
   );
 };

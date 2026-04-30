@@ -23,7 +23,6 @@ const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
         {
           fps: 10,
           qrbox: { width: 300, height: 300 },
-          supportedScanTypes: ['barcode', 'qr_code'],
         },
         (decodedText) => {
           onScan(decodedText);

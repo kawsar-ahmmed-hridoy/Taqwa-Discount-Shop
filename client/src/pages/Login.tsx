@@ -134,9 +134,9 @@ const Login = () => {
                 <p className="font-medium text-gray-700 mb-3">Default Credentials</p>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   {[
-                    { role: 'Owner', email: 'owner@takowa.com' },
-                    { role: 'Manager', email: 'manager@takowa.com' },
-                    { role: 'Staff', email: 'staff@takowa.com' },
+                    { role: 'Owner', email: 'owner@taqwa.com' },
+                    { role: 'Manager', email: 'manager@taqwa.com' },
+                    { role: 'Staff', email: 'staff@taqwa.com' },
                   ].map((cred) => (
                     <button
                       key={cred.role}

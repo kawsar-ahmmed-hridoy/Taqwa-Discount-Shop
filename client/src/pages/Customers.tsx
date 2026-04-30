@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { customerAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { Plus, Search, Edit, Award, History } from 'lucide-react';
+import { Plus, Search, Edit, Award, X, User, Phone, Mail, MapPin, ShoppingBag, TrendingUp } from 'lucide-react';
 
 interface Customer {
   id: number;
@@ -13,174 +13,286 @@ interface Customer {
   createdAt: string;
 }
 
-const Customers = () => {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [purchaseHistory, setPurchaseHistory] = useState<any[]>([]);
+const EMPTY_FORM = { name: '', phone: '', email: '', address: '' };
 
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-  });
+const fmt = (n: number) => `৳${n.toLocaleString('en-BD', { minimumFractionDigits: 2 })}`;
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+const Avatar = ({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' }) => {
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const hue = name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-[12px]';
+  return (
+    <div className={`${dim} rounded-full flex items-center justify-center font-bold shrink-0`}
+      style={{ background: `hsl(${hue},35%,22%)`, color: `hsl(${hue},70%,65%)`, border: `1px solid hsl(${hue},40%,30%)` }}>
+      {initials}
+    </div>
+  );
+};
 
-  const fetchCustomers = async () => {
-    try {
-      const response = await customerAPI.getAll({ search: searchQuery });
-      setCustomers(response.data.data);
-    } catch (error) {
-      toast.error('Failed to fetch customers'+error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const handleSearch = () => {
-    fetchCustomers();
-  };
+// ── Customer drawer (edit / view) ─────────────────────────────────────────────
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const CustomerDrawer = ({ customer, onClose, onSaved }: { customer: Customer | 'new'; onClose: () => void; onSaved: () => void }) => {
+  const isEdit = customer !== 'new';
+  const [form, setForm]   = useState(isEdit ? { name: customer.name, phone: customer.phone, email: customer.email ?? '', address: customer.address ?? '' } : EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     try {
-      if (selectedCustomer) {
-        await customerAPI.update(selectedCustomer.id, formData);
-        toast.success('Customer updated successfully');
-      } else {
-        await customerAPI.create(formData);
-        toast.success('Customer created successfully');
-      }
-      setShowModal(false);
-      resetForm();
-      fetchCustomers();
-    } catch (error: unknown) {
-      toast.error('Operation failed'+error);
-    }
+      isEdit ? await customerAPI.update(customer.id, form) : await customerAPI.create(form);
+      toast.success(isEdit ? 'Customer updated' : 'Customer created');
+      onSaved();
+    } catch { toast.error('Operation failed'); }
+    finally { setSaving(false); }
   };
-
-  const resetForm = () => {
-    setFormData({ name: '', phone: '', email: '', address: '' });
-    setSelectedCustomer(null);
-  };
-
-  const handleEdit = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setFormData({
-      name: customer.name,
-      phone: customer.phone,
-      email: customer.email || '',
-      address: customer.address || '',
-    });
-    setShowModal(true);
-  };
-
-  const handleAdd = () => {
-    resetForm();
-    setShowModal(true);
-  };
-
-  const viewHistory = async (customer: Customer) => {
-    try {
-      const response = await customerAPI.getHistory(customer.id);
-      setPurchaseHistory(response.data.data);
-      setSelectedCustomer(customer);
-      setShowHistory(true);
-    } catch (error) {
-      toast.error('Failed to fetch purchase history'+error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="spinner w-12 h-12"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Customers</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{customers.length} registered customers</p>
+    <Overlay onClose={onClose}>
+      <div className="w-full max-w-md">
+        <ModalHeader title={isEdit ? `Edit — ${customer.name}` : 'New Customer'} onClose={onClose} />
+        <form onSubmit={submit} className="p-6 space-y-4">
+          {[
+            { key: 'name',    label: 'Full Name',  type: 'text',  required: true,  placeholder: 'e.g. Rahim Uddin' },
+            { key: 'phone',   label: 'Phone',      type: 'tel',   required: true,  placeholder: '01XXXXXXXXX' },
+            { key: 'email',   label: 'Email',      type: 'email', required: false, placeholder: 'optional' },
+            { key: 'address', label: 'Address',    type: 'text',  required: false, placeholder: 'optional' },
+          ].map(({ key, label, type, required, placeholder }) => (
+            <div key={key}>
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">{label}{required && ' *'}</label>
+              <input type={type} required={required} placeholder={placeholder} value={(form as any)[key]}
+                onChange={e => set(key, e.target.value)}
+                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+            </div>
+          ))}
+          <div className="flex gap-2.5 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all">
+              {saving ? 'Saving…' : isEdit ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </Overlay>
+  );
+};
+
+// ── Purchase history modal ────────────────────────────────────────────────────
+
+const HistoryModal = ({ customer, onClose }: { customer: Customer; onClose: () => void }) => {
+  const [history, setHistory]   = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    customerAPI.getHistory(customer.id)
+      .then(r => setHistory(r.data.data))
+      .catch(() => toast.error('Failed to load history'))
+      .finally(() => setLoading(false));
+  }, [customer.id]);
+
+  const total = history.reduce((s, h) => s + h.total, 0);
+
+  return (
+    <Overlay onClose={onClose}>
+      <div className="w-full max-w-lg">
+        <ModalHeader title={`History — ${customer.name}`} onClose={onClose} />
+        <div className="px-6 pb-2 pt-4 grid grid-cols-3 gap-3">
+          {[
+            { label: 'Orders',          value: `${history.length}` },
+            { label: 'Total Spent',     value: loading ? '…' : fmt(total) },
+            { label: 'Loyalty Points',  value: `${customer.loyaltyPoints} pts` },
+          ].map(({ label, value }) => (
+            <div key={label} className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-3 py-2.5 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-[#3a404f] font-semibold">{label}</p>
+              <p className="text-[14px] font-bold text-[#e2e5eb] mt-1">{value}</p>
+            </div>
+          ))}
         </div>
-        <button onClick={handleAdd} className="btn-primary flex items-center gap-2">
-          <Plus size={18} /> Add Customer
+        <div className="p-6 pt-3 space-y-1.5 max-h-72 overflow-y-auto">
+          {loading ? (
+            <div className="flex justify-center py-8"><div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-[#1f6feb] animate-spin" /></div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-8 text-[13px] text-[#3a404f]">No purchases yet</div>
+          ) : history.map(sale => (
+            <div key={sale.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors">
+              <div>
+                <p className="text-[12.5px] font-medium text-[#e2e5eb]">{sale.invoiceNo}</p>
+                <p className="text-[11px] text-[#3a404f]">{new Date(sale.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {sale.items.length} items</p>
+              </div>
+              <span className="text-[12.5px] font-semibold text-emerald-400">{fmt(sale.total)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Overlay>
+  );
+};
+
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
+const Overlay = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl w-full" style={{ maxWidth: 'fit-content', fontFamily: "'DM Sans', sans-serif" }}>
+      {children}
+    </div>
+  </div>
+);
+
+const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
+  <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+    <p className="text-[15px] font-semibold text-[#f0f2f5]">{title}</p>
+    <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
+  </div>
+);
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+const Customers = () => {
+  const [customers, setCustomers]   = useState<Customer[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
+  const [sort, setSort]             = useState<'name' | 'points' | 'date'>('date');
+  const [modal, setModal]           = useState<null | 'new' | Customer>(null);
+  const [historyFor, setHistoryFor] = useState<Customer | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await customerAPI.getAll({ search });
+      setCustomers(r.data.data);
+    } catch { toast.error('Failed to load customers'); }
+    finally { setLoading(false); }
+  }, [search]);
+
+  useEffect(() => { load(); }, []);
+
+  const visible = useMemo(() => {
+    const q = search.toLowerCase();
+    return [...customers]
+      .filter(c => !q || c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.email?.toLowerCase().includes(q))
+      .sort((a, b) =>
+        sort === 'points' ? b.loyaltyPoints - a.loyaltyPoints :
+        sort === 'name'   ? a.name.localeCompare(b.name) :
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }, [customers, search, sort]);
+
+  const topSpender = useMemo(() => customers.reduce((t, c) => c.loyaltyPoints > (t?.loyaltyPoints ?? -1) ? c : t, null as Customer | null), [customers]);
+
+  return (
+    <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Customers</h1>
+          <p className="text-[11.5px] text-[#3a404f] mt-0.5">{customers.length} registered customers</p>
+        </div>
+        <button onClick={() => setModal('new')} className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
+          <Plus size={13} /> Add Customer
         </button>
       </div>
 
-      <div className="card p-4">
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Search by name, phone, or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="input-field pl-10"
-            />
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total Customers',  value: `${customers.length}`,                                               icon: User,        color: 'text-[#6ea8fe] bg-[#1f6feb]/10' },
+          { label: 'Total Loyalty Pts',value: `${customers.reduce((s, c) => s + c.loyaltyPoints, 0).toLocaleString()}`, icon: Award,  color: 'text-amber-400 bg-amber-400/10' },
+          { label: 'New This Month',   value: `${customers.filter(c => { const d = new Date(c.createdAt), n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length}`, icon: TrendingUp, color: 'text-emerald-400 bg-emerald-400/10' },
+          { label: 'Top Loyalty',      value: topSpender ? `${topSpender.loyaltyPoints} pts` : '—',                icon: Award,       color: 'text-amber-400 bg-amber-400/10', sub: topSpender?.name },
+        ].map(({ label, value, icon: Icon, color, sub }) => (
+          <div key={label} className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-4 py-3.5 flex items-start justify-between hover:border-white/[0.09] transition-colors">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{label}</p>
+              <p className="text-[19px] font-bold text-[#e2e5eb] mt-1 leading-none">{value}</p>
+              {sub && <p className="text-[11px] text-[#3a404f] mt-1 truncate max-w-[100px]">{sub}</p>}
+            </div>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}><Icon size={14} /></div>
           </div>
-          <button onClick={handleSearch} className="btn-primary px-6">Search</button>
-        </div>
+        ))}
       </div>
 
-      <div className="table-container">
-        <div className="overflow-x-auto">
-          <table className="table">
+      {/* Search + sort */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3a404f]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
+            placeholder="Name, phone, or email…"
+            className="w-full h-8 pl-8 pr-8 text-[12.5px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all" />
+          {search && <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a404f] hover:text-[#c8cdd8]"><X size={11} /></button>}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+          {([['date', 'Newest'], ['name', 'Name'], ['points', 'Points']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setSort(key)}
+              className={`px-3 h-7 text-[12px] font-medium rounded-md transition-all ${sort === key ? 'bg-[#1f6feb] text-white' : 'text-[#3a404f] hover:text-[#c8cdd8]'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <span className="text-[11.5px] text-[#3a404f] ml-auto">{visible.length} customer{visible.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#1f6feb] animate-spin" />
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-52 border border-white/[0.055] rounded-xl bg-white/[0.02] gap-3">
+          <User size={26} className="text-[#3a404f]" />
+          <p className="text-[13px] text-[#3a404f]">{search ? 'No matching customers' : 'No customers yet'}</p>
+          {!search && <button onClick={() => setModal('new')} className="text-[12.5px] text-[#6ea8fe] hover:underline">Add one</button>}
+        </div>
+      ) : (
+        <div className="border border-white/[0.055] rounded-xl overflow-hidden">
+          <table className="w-full text-[12.5px]">
             <thead>
-              <tr>
-                <th>Customer</th>
-                <th>Contact</th>
-                <th>Address</th>
-                <th>Loyalty Points</th>
-                <th>Actions</th>
+              <tr className="border-b border-white/[0.05]">
+                {['Customer', 'Contact', 'Address', 'Loyalty', 'Actions'].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <div className="empty-state">
-                      <Award size={36} className="mx-auto text-gray-200 mb-2" />
-                      <p className="font-medium text-gray-500">No customers found</p>
+              {visible.map((c, i) => (
+                <tr key={c.id} className={`border-b border-white/[0.035] hover:bg-white/[0.025] transition-colors ${i % 2 ? 'bg-white/[0.01]' : ''}`}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <Avatar name={c.name} />
+                      <div>
+                        <p className="text-[13px] font-medium text-[#e2e5eb]">{c.name}</p>
+                        <p className="text-[11px] text-[#3a404f]">Joined {new Date(c.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                      </div>
                     </div>
                   </td>
-                </tr>
-              ) : customers.map((customer) => (
-                <tr key={customer.id}>
-                  <td>
-                    <div className="font-medium text-gray-900">{customer.name}</div>
-                    <div className="text-xs text-gray-400">Joined {new Date(customer.createdAt).toLocaleDateString()}</div>
+                  <td className="px-4 py-3">
+                    <p className="text-[12.5px] text-[#c8cdd8] flex items-center gap-1.5"><Phone size={10} className="text-[#3a404f]" />{c.phone}</p>
+                    {c.email && <p className="text-[11.5px] text-[#3a404f] flex items-center gap-1.5 mt-0.5"><Mail size={10} />{c.email}</p>}
                   </td>
-                  <td>
-                    <div className="text-sm">{customer.phone}</div>
-                    {customer.email && <div className="text-xs text-gray-500">{customer.email}</div>}
+                  <td className="px-4 py-3 text-[#6b7280] max-w-[160px] truncate">
+                    {c.address ? <span className="flex items-center gap-1.5"><MapPin size={10} className="text-[#3a404f] shrink-0" />{c.address}</span> : <span className="text-[#3a404f]">—</span>}
                   </td>
-                  <td className="text-sm">{customer.address || <span className="text-gray-400">—</span>}</td>
-                  <td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11.5px] font-semibold border
+                      ${c.loyaltyPoints >= 100 ? 'text-amber-400 bg-amber-400/10 border-amber-400/25' : 'text-[#6b7280] bg-white/[0.03] border-white/[0.06]'}`}>
+                      <Award size={11} /> {c.loyaltyPoints.toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <Award className="text-yellow-500" size={15} />
-                      <span className="font-semibold text-gray-900">{customer.loyaltyPoints}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => viewHistory(customer)} className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors" title="Purchase History">
-                        <History size={16} />
+                      <button onClick={() => setHistoryFor(c)} title="Purchase history"
+                        className="flex items-center gap-1 px-2 py-1 text-[11.5px] font-medium text-[#6ea8fe] border border-[#1f6feb]/25 bg-[#1f6feb]/10 rounded-md hover:bg-[#1f6feb]/20 transition-all">
+                        <ShoppingBag size={10} /> History
                       </button>
-                      <button onClick={() => handleEdit(customer)} className="p-2 rounded-lg text-primary-600 hover:bg-primary-50 transition-colors" title="Edit">
-                        <Edit size={16} />
+                      <button onClick={() => setModal(c)} title="Edit"
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-[#3a404f] hover:text-[#c8cdd8] hover:bg-white/[0.06] transition-all">
+                        <Edit size={12} />
                       </button>
                     </div>
                   </td>
@@ -189,80 +301,10 @@ const Customers = () => {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content max-w-md w-full">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">
-                {selectedCustomer ? 'Edit Customer' : 'Add New Customer'}
-              </h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
-                <Plus size={18} className="rotate-45" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div>
-                <label className="label">Name *</label>
-                <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="input-field" placeholder="Full name" />
-              </div>
-              <div>
-                <label className="label">Phone *</label>
-                <input type="tel" required value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="input-field" placeholder="01XXXXXXXXX" />
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="input-field" placeholder="Optional" />
-              </div>
-              <div>
-                <label className="label">Address</label>
-                <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={3} className="input-field" placeholder="Optional" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">Cancel</button>
-                <button type="submit" className="btn-primary flex-1">{selectedCustomer ? 'Update' : 'Create'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
 
-      {showHistory && (
-        <div className="modal-overlay">
-          <div className="modal-content max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Purchase History — {selectedCustomer?.name}</h2>
-              <button onClick={() => setShowHistory(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
-                <Plus size={18} className="rotate-45" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-5">
-              {purchaseHistory.length === 0 ? (
-                <div className="empty-state py-12">
-                  <History size={36} className="mx-auto text-gray-200 mb-2" />
-                  <p className="text-gray-500">No purchase history</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {purchaseHistory.map((sale) => (
-                    <div key={sale.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:bg-gray-50">
-                      <div>
-                        <span className="font-medium text-gray-900">{sale.invoiceNo}</span>
-                        <div className="text-xs text-gray-500 mt-0.5">{new Date(sale.createdAt).toLocaleDateString()} · {sale.items.length} items</div>
-                      </div>
-                      <span className="text-base font-bold text-primary-700">BDT {sale.total.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="p-5 border-t border-gray-100">
-              <button onClick={() => setShowHistory(false)} className="btn-secondary w-full">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {modal && <CustomerDrawer customer={modal === 'new' ? 'new' : modal as Customer} onClose={() => setModal(null)} onSaved={() => { setModal(null); load(); }} />}
+      {historyFor && <HistoryModal customer={historyFor} onClose={() => setHistoryFor(null)} />}
     </div>
   );
 };

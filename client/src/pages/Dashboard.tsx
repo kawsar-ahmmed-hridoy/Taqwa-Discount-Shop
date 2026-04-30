@@ -1,44 +1,56 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI } from '../services/api';
-import { DollarSign, Package, ShoppingBag, AlertTriangle, TrendingUp, Users, ShoppingCart, ArrowRight, ArrowUp } from 'lucide-react';
+import {
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+  ShoppingBag,
+  ShoppingCart,
+  Package,
+  Users,
+  BarChart3,
+  RefreshCw,
+  ArrowRight,
+  ArrowUpRight,
+} from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 interface DashboardData {
-  todaySales: {
-    count: number;
-    revenue: number;
-    discounts: number;
-  };
+  todaySales: { count: number; revenue: number; discounts: number };
   lowStock: number;
   pendingOrders: number;
   notifications: number;
-  topProducts: Array<{
-    id: number;
-    name: string;
-    quantity: number;
-    revenue: number;
-  }>;
-  recentSales: Array<{
-    id: number;
-    invoiceNo: string;
-    customer: string;
-    total: number;
-    createdAt: string;
-  }>;
+  topProducts: Array<{ id: number; name: string; quantity: number; revenue: number }>;
+  recentSales: Array<{ id: number; invoiceNo: string; customer: string; total: number; createdAt: string }>;
 }
+
+const greeting = () => {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+};
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-BD', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+
+const rankClass: Record<number, string> = {
+  0: 'bg-yellow-500/10 text-yellow-600',
+  1: 'bg-slate-400/10 text-slate-500',
+  2: 'bg-orange-500/10 text-orange-600',
+};
 
 const Dashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  useEffect(() => { fetchDashboardData(); }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     try {
       const response = await dashboardAPI.get();
       setData(response.data.data);
@@ -46,6 +58,7 @@ const Dashboard = () => {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -53,8 +66,10 @@ const Dashboard = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="spinner w-12 h-12 mx-auto mb-4" />
-          <p className="text-gray-500 text-sm">Loading dashboard...</p>
+          <div className="w-5 h-5 border-2 border-[#1f6feb] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-[#3c4252] text-xs" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            Loading dashboard...
+          </p>
         </div>
       </div>
     );
@@ -62,221 +77,261 @@ const Dashboard = () => {
 
   const stats = [
     {
-      title: "Today's Revenue",
-      value: `BDT ${(data?.todaySales.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      subtitle: `${data?.todaySales.count || 0} transactions`,
+      label: "Today's Revenue",
+      value: `৳ ${fmt(data?.todaySales.revenue ?? 0)}`,
+      sub: `${data?.todaySales.count ?? 0} transactions`,
       icon: TrendingUp,
-      gradient: 'gradient-success',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50',
+      iconColor: 'text-[#4ade80]',
+      iconBg: 'bg-green-500/10',
+      valueColor: 'text-[#c8cdd8]',
     },
     {
-      title: "Today's Discounts",
-      value: `BDT ${(data?.todaySales.discounts || 0).toFixed(2)}`,
-      subtitle: 'Total discounts given',
-      icon: DollarSign,
-      gradient: 'gradient-warning',
-      textColor: 'text-amber-600',
-      bgColor: 'bg-amber-50',
+      label: 'Discounts Given',
+      value: `৳ ${fmt(data?.todaySales.discounts ?? 0)}`,
+      sub: 'Total today',
+      icon: Clock,
+      iconColor: 'text-[#fbbf24]',
+      iconBg: 'bg-amber-500/10',
+      valueColor: 'text-[#c8cdd8]',
     },
     {
-      title: 'Low Stock Alerts',
-      value: data?.lowStock || 0,
-      subtitle: 'Products need restocking',
+      label: 'Low Stock Alerts',
+      value: String(data?.lowStock ?? 0),
+      sub: 'Need restocking',
       icon: AlertTriangle,
-      gradient: 'gradient-danger',
-      textColor: 'text-red-600',
-      bgColor: 'bg-red-50',
-      clickable: '/products',
+      iconColor: 'text-[#f87171]',
+      iconBg: 'bg-red-500/10',
+      valueColor: 'text-[#f87171]',
+      link: '/products',
     },
     {
-      title: 'Pending Orders',
-      value: data?.pendingOrders || 0,
-      subtitle: 'Awaiting delivery',
+      label: 'Pending Orders',
+      value: String(data?.pendingOrders ?? 0),
+      sub: 'Awaiting delivery',
       icon: ShoppingBag,
-      gradient: 'gradient-info',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      clickable: '/purchase-orders',
+      iconColor: 'text-[#6ea8fe]',
+      iconBg: 'bg-blue-500/10',
+      valueColor: 'text-[#6ea8fe]',
+      link: '/purchase-orders',
     },
   ];
 
   const quickActions = [
-    {
-      label: 'New Sale',
-      desc: 'Process a customer purchase',
-      path: '/sales',
-      color: 'bg-primary-600 hover:bg-primary-700',
-      icon: ShoppingCart,
-    },
-    {
-      label: 'Add Product',
-      desc: 'Add new items to inventory',
-      path: '/products',
-      color: 'bg-emerald-600 hover:bg-emerald-700',
-      icon: Package,
-    },
-    {
-      label: 'Add Customer',
-      desc: 'Register a new customer',
-      path: '/customers',
-      color: 'bg-blue-600 hover:bg-blue-700',
-      icon: Users,
-    },
-    {
-      label: 'View Reports',
-      desc: 'Analyze sales & inventory',
-      path: '/reports',
-      color: 'bg-purple-600 hover:bg-purple-700',
-      icon: TrendingUp,
-    },
+    { label: 'New Sale', desc: 'Process purchase', path: '/sales', iconColor: '#6ea8fe', iconBg: 'rgba(31,111,235,0.12)', Icon: ShoppingCart },
+    { label: 'Add Product', desc: 'Update inventory', path: '/products', iconColor: '#4ade80', iconBg: 'rgba(22,163,74,0.10)', Icon: Package },
+    { label: 'Add Customer', desc: 'Register new', path: '/customers', iconColor: '#a5b4fc', iconBg: 'rgba(99,102,241,0.10)', Icon: Users },
+    { label: 'Reports', desc: 'View analytics', path: '/reports', iconColor: '#fbbf24', iconBg: 'rgba(234,179,8,0.08)', Icon: BarChart3 },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome header */}
-      <div className="flex items-center justify-between">
+    <div
+      className="flex flex-col gap-3.5 p-5 min-h-full"
+      style={{ fontFamily: "'DM Sans', sans-serif", background: 'var(--bg)' }}
+    >
+      {/* Top row */}
+      <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'},{' '}
-            <span className="text-primary-600">{user?.fullName?.split(' ')[0]}!</span>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-[#333844] mb-1">
+            Overview
+          </p>
+          <h1 className="text-[17px] font-semibold text-[#c8cdd8] tracking-tight leading-none">
+            {greeting()},{' '}
+            <span className="text-[#6ea8fe]">{user?.fullName?.split(' ')[0]}</span>
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">Here's your business overview for today</p>
         </div>
         <button
-          onClick={fetchDashboardData}
-          className="btn-secondary text-sm"
+          onClick={() => fetchDashboardData(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 h-[30px] px-3 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.13] rounded-[7px] text-[#4a5060] hover:text-[#8892a4] text-[11.5px] font-medium transition-all duration-[120ms] disabled:opacity-50"
         >
+          <RefreshCw size={11} strokeWidth={2} className={refreshing ? 'animate-spin' : ''} />
           Refresh
         </button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-2.5">
+        {stats.map((s) => {
+          const Icon = s.icon;
           return (
             <div
-              key={index}
-              onClick={stat.clickable ? () => navigate(stat.clickable!) : undefined}
-              className={`card p-6 ${stat.clickable ? 'cursor-pointer hover:shadow-card-hover transition-shadow' : ''}`}
+              key={s.label}
+              onClick={s.link ? () => navigate(s.link!) : undefined}
+              className={`bg-[#111318] border border-white/[0.055] rounded-[10px] p-3.5 flex flex-col gap-2.5 transition-all duration-[120ms] ${
+                s.link ? 'cursor-pointer hover:border-white/[0.12]' : ''
+              }`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
-                  <Icon className={stat.textColor} size={22} />
+              <div className="flex items-center justify-between">
+                <div className={`w-7 h-7 rounded-[7px] ${s.iconBg} flex items-center justify-center`}>
+                  <Icon size={14} strokeWidth={1.8} className={s.iconColor} />
                 </div>
-                {stat.clickable && (
-                  <ArrowRight size={16} className="text-gray-400" />
-                )}
+                {s.link && <ArrowRight size={12} strokeWidth={1.8} className="text-[#2a2f3a]" />}
               </div>
               <div>
-                <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm font-medium text-gray-700 mt-1">{stat.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{stat.subtitle}</p>
+                <p
+                  className={`text-[18px] font-semibold ${s.valueColor} tracking-tight leading-none`}
+                  style={{ fontFamily: "'DM Mono', monospace" }}
+                >
+                  {s.value}
+                </p>
+                <p className="text-[11.5px] font-medium text-[#505668] mt-1.5">{s.label}</p>
+                <p className="text-[10.5px] text-[#333844] mt-px">{s.sub}</p>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Quick Actions + Recent Sales */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Quick Actions */}
-        <div className="card p-6">
-          <h3 className="section-title mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.path}
-                  onClick={() => navigate(action.path)}
-                  className={`${action.color} text-white rounded-xl p-4 text-left transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] shadow-sm`}
+      {/* Mid row: quick actions + recent sales */}
+      <div className="grid gap-2.5" style={{ gridTemplateColumns: '220px 1fr' }}>
+        {/* Quick actions */}
+        <div className="bg-[#111318] border border-white/[0.055] rounded-[10px] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#333844]">
+              Quick Actions
+            </span>
+          </div>
+          <div className="p-2.5 grid grid-cols-2 gap-1.5">
+            {quickActions.map((a) => (
+              <button
+                key={a.path}
+                onClick={() => navigate(a.path)}
+                className="bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] hover:border-white/[0.12] rounded-[8px] p-2.5 text-left transition-all duration-[120ms]"
+              >
+                <div
+                  className="w-[22px] h-[22px] rounded-[6px] flex items-center justify-center mb-2"
+                  style={{ background: a.iconBg }}
                 >
-                  <Icon size={20} className="mb-2" />
-                  <p className="text-sm font-semibold">{action.label}</p>
-                  <p className="text-xs text-white/70 mt-0.5">{action.desc}</p>
-                </button>
-              );
-            })}
+                  <a.Icon size={12} strokeWidth={1.8} style={{ color: a.iconColor }} />
+                </div>
+                <p className="text-[12px] font-semibold text-[#c8cdd8] leading-none">{a.label}</p>
+                <p className="text-[10.5px] text-[#3c4252] mt-[3px]">{a.desc}</p>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Recent Sales */}
-        <div className="card p-6 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title">Recent Sales</h3>
+        {/* Recent sales */}
+        <div className="bg-[#111318] border border-white/[0.055] rounded-[10px] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#333844]">
+              Recent Sales
+            </span>
             <button
               onClick={() => navigate('/sales')}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+              className="flex items-center gap-1 text-[11px] font-medium text-[#3a4255] hover:text-[#6ea8fe] transition-colors duration-[120ms]"
             >
-              View all <ArrowRight size={14} />
+              View all <ArrowRight size={10} strokeWidth={1.8} />
             </button>
           </div>
           {data?.recentSales && data.recentSales.length > 0 ? (
-            <div className="space-y-2">
-              {data.recentSales.slice(0, 6).map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-primary-100 flex items-center justify-center">
-                      <ShoppingCart size={16} className="text-primary-600" />
+            <div>
+              {data.recentSales.slice(0, 5).map((sale) => (
+                <div
+                  key={sale.id}
+                  className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.035] last:border-0 hover:bg-white/[0.025] transition-colors duration-[100ms]"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-[26px] h-[26px] rounded-[7px] bg-[#1f6feb]/10 flex items-center justify-center flex-shrink-0">
+                      <ShoppingCart size={11} strokeWidth={1.8} className="text-[#6ea8fe]" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{sale.invoiceNo}</p>
-                      <p className="text-xs text-gray-500">{sale.customer || 'Walk-in Customer'}</p>
+                      <p
+                        className="text-[12px] font-semibold text-[#8892a4] leading-none"
+                        style={{ fontFamily: "'DM Mono', monospace" }}
+                      >
+                        {sale.invoiceNo}
+                      </p>
+                      <p className="text-[11px] text-[#3c4252] mt-[3px]">
+                        {sale.customer || 'Walk-in Customer'}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">BDT {sale.total.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(sale.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    <p
+                      className="text-[12.5px] font-semibold text-[#c8cdd8] leading-none"
+                      style={{ fontFamily: "'DM Mono', monospace" }}
+                    >
+                      ৳ {fmt(sale.total)}
+                    </p>
+                    <p className="text-[10.5px] text-[#333844] mt-[3px]">
+                      {new Date(sale.createdAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="empty-state">
-              <ShoppingCart size={40} className="text-gray-300 mb-3" />
-              <p className="text-gray-500 font-medium">No sales today</p>
-              <p className="text-gray-400 text-sm mt-1">Start making sales to see them here</p>
-              <button onClick={() => navigate('/sales')} className="btn-primary mt-4 text-sm">
-                New Sale
+            <div className="flex flex-col items-center justify-center py-10 gap-2">
+              <ShoppingCart size={24} strokeWidth={1.5} className="text-[#2a2f3a]" />
+              <p className="text-[12px] text-[#3c4252]">No sales yet today</p>
+              <button
+                onClick={() => navigate('/sales')}
+                className="mt-1 flex items-center gap-1.5 text-[11.5px] font-medium text-[#6ea8fe] hover:text-[#93c5fd] transition-colors"
+              >
+                Start a new sale <ArrowUpRight size={11} />
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Top Products */}
+      {/* Top products */}
       {data?.topProducts && data.topProducts.length > 0 && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-title">Top Selling Products Today</h3>
+        <div className="bg-[#111318] border border-white/[0.055] rounded-[10px] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#333844]">
+              Top Selling Products
+            </span>
             <button
               onClick={() => navigate('/reports')}
-              className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+              className="flex items-center gap-1 text-[11px] font-medium text-[#3a4255] hover:text-[#6ea8fe] transition-colors duration-[120ms]"
             >
-              Full Report <ArrowRight size={14} />
+              Full report <ArrowRight size={10} strokeWidth={1.8} />
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {data.topProducts.slice(0, 6).map((product, index) => (
-              <div key={product.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0 ${
-                  index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-400' : 'bg-gray-300'
-                }`}>
-                  #{index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-xs text-gray-500">{product.quantity} sold</span>
-                    <span className="text-xs font-medium text-green-600 flex items-center gap-0.5">
-                      <ArrowUp size={10} /> BDT {product.revenue.toFixed(0)}
-                    </span>
-                  </div>
-                </div>
+          <div
+            className="grid"
+            style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+          >
+            {[0, 1, 2].map((col) => (
+              <div
+                key={col}
+                className={col > 0 ? 'border-l border-white/[0.04]' : ''}
+              >
+                {data.topProducts.slice(col * 2, col * 2 + 2).map((p, i) => {
+                  const rank = col * 2 + i;
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex items-center gap-2.5 px-4 py-2.5 border-b border-white/[0.035] last:border-0 hover:bg-white/[0.025] transition-colors duration-[100ms]"
+                    >
+                      <span
+                        className={`w-5 h-5 rounded-[5px] flex items-center justify-center text-[9.5px] font-bold flex-shrink-0 ${
+                          rankClass[rank] ?? 'bg-white/[0.05] text-[#3c4252]'
+                        }`}
+                        style={{ fontFamily: "'DM Mono', monospace" }}
+                      >
+                        #{rank + 1}
+                      </span>
+                      <span className="flex-1 text-[12px] font-medium text-[#8892a4] truncate">
+                        {p.name}
+                      </span>
+                      <div className="text-right">
+                        <p
+                          className="text-[11.5px] font-semibold text-[#4ade80] leading-none"
+                          style={{ fontFamily: "'DM Mono', monospace" }}
+                        >
+                          ৳ {fmt(p.revenue)}
+                        </p>
+                        <p className="text-[10.5px] text-[#333844] mt-[3px]">{p.quantity} sold</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>

@@ -8,6 +8,9 @@ import {
   resetPasswordService,
 } from './auth.service';
 import { HTTP_STATUS, MESSAGES } from '../../constants';
+import { getPrismaClient } from '../../config';
+
+const prisma = getPrismaClient();
 
 
 export const login = async (req: Request, res: Response): Promise<any> => {
@@ -140,6 +143,44 @@ export const resetPassword = async (req: Request, res: Response): Promise<any> =
     return res.status(HTTP_STATUS.OK).json({
       success: true,
       message: 'Password reset successfully',
+    });
+  } catch (error: any) {
+    return res.status(error.statusCode || HTTP_STATUS.INTERNAL_ERROR).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+export const forgotPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'Email is required',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    // Don't reveal if email exists or not for security
+    if (!user) {
+      return res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: 'If an account with this email exists, a reset link will be sent shortly.',
+      });
+    }
+
+    // TODO: Implement email sending with reset token
+    // For now, just return success
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'If an account with this email exists, a reset link will be sent shortly.',
     });
   } catch (error: any) {
     return res.status(error.statusCode || HTTP_STATUS.INTERNAL_ERROR).json({
