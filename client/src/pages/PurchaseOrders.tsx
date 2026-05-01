@@ -1,388 +1,318 @@
 import { useState, useEffect, useMemo } from 'react';
 import { purchaseOrderAPI, supplierAPI, productAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import {
-  Plus, Package, Truck, XCircle,
-  Search, CalendarDays,
-  ArrowUpDown, Eye, MoreHorizontal, TrendingUp,
-} from 'lucide-react';
+import { Plus, Truck, XCircle, Search, X, Eye, MoreHorizontal, Package, Receipt } from 'lucide-react';
 
-interface OrderItem {
-  id: number;
-  product: { name: string };
-  quantity: number;
-  price: number;
-  total: number;
-}
+interface OrderItem { id: number; product: { name: string }; quantity: number; price: number; total: number; }
 interface PurchaseOrder {
-  id: number;
-  orderNo: string;
+  id: number; orderNo: string;
   supplier: { id: number; name: string };
   status: 'PENDING' | 'DELIVERED' | 'CANCELLED';
-  orderDate: string;
-  deliveryDate?: string;
-  total: number;
-  items: OrderItem[];
+  orderDate: string; deliveryDate?: string;
+  total: number; notes?: string; items: OrderItem[];
 }
 
-type SortField = 'orderDate' | 'total' | 'orderNo';
-type SortDir = 'asc' | 'desc';
-
-const STATUS_CONFIG = {
-  PENDING:   { label: 'Pending',   dot: 'var(--status-pending)', text: 'var(--status-pending-text)', bg: 'var(--status-pending-bg)' },
-  DELIVERED: { label: 'Delivered', dot: 'var(--status-delivered)', text: 'var(--status-delivered-text)', bg: 'var(--status-delivered-bg)' },
-  CANCELLED: { label: 'Cancelled', dot: 'var(--status-cancelled)', text: 'var(--status-cancelled-text)', bg: 'var(--status-cancelled-bg)'  },
-};
-
-const fmt = (n: number) => `BDT ${n.toLocaleString('en-BD', { minimumFractionDigits: 2 })}`;
+const fmt     = (n: number) => `৳${n.toLocaleString('en-BD', { minimumFractionDigits: 2 })}`;
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-/* ─── Tiny styled primitives ──────────────────────────────────────────────── */
-const Badge = ({ status }: { status: keyof typeof STATUS_CONFIG }) => {
-  const c = STATUS_CONFIG[status];
+const STATUS = {
+  PENDING:   { dot: 'bg-amber-400',   text: 'text-amber-400',   bg: 'bg-amber-400/10',   border: 'border-amber-400/25'   },
+  DELIVERED: { dot: 'bg-emerald-400', text: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/25' },
+  CANCELLED: { dot: 'bg-red-400',     text: 'text-red-400',     bg: 'bg-red-400/10',     border: 'border-red-400/25'     },
+} as const;
+
+const Badge = ({ status }: { status: keyof typeof STATUS }) => {
+  const c = STATUS[status];
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600,
-      letterSpacing:'0.04em', padding:'3px 9px', borderRadius:20,
-      background: c.bg, color: c.text, border:`1px solid ${c.dot}30` }}>
-      <span style={{ width:5, height:5, borderRadius:'50%', background: c.dot, flexShrink:0 }} />
-      {c.label}
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${c.bg} ${c.text} ${c.border}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />{status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
 };
 
-const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
-  <div style={{ background:'var(--card-bg)', border:'1px solid var(--border-subtle)',
-    borderRadius:10, padding:'14px 18px' }}>
-    <p style={{ fontSize:11, color:'var(--muted)', marginBottom:4, letterSpacing:'0.05em', textTransform:'uppercase' }}>{label}</p>
-    <p style={{ fontSize:22, fontWeight:700, color:'var(--text)', lineHeight:1 }}>{value}</p>
-    {sub && <p style={{ fontSize:11, color:'var(--muted)', marginTop:4 }}>{sub}</p>}
-  </div>
+const inp = "w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all";
+const Lbl = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#3a404f] mb-1.5">{children}</p>
 );
 
-/* ─── Detail drawer ───────────────────────────────────────────────────────── */
-const DetailDrawer = ({ order, onClose }: { order: PurchaseOrder; onClose: () => void }) => (
-  <div style={{ position:'fixed', inset:0, zIndex:60, display:'flex' }}>
-    <div onClick={onClose} style={{ flex:1, background:'rgba(0,0,0,0.55)' }} />
-    <div style={{ width:420, background:'var(--panel-bg)', borderLeft:'1px solid var(--border-subtle)',
-      display:'flex', flexDirection:'column', fontFamily:"'DM Sans', sans-serif" }}>
-      <div style={{ padding:'18px 22px', borderBottom:'1px solid rgba(255,255,255,0.06)',
-        display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+// ── Detail drawer ──────────────────────────────────────────────────────────────
+
+const Drawer = ({ order, onClose }: { order: PurchaseOrder; onClose: () => void }) => (
+  <div className="fixed inset-0 z-50 flex" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex-1 bg-black/55" onClick={onClose} />
+    <div className="w-[400px] bg-[#13161c] border-l border-white/[0.07] flex flex-col">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
         <div>
-          <p style={{ fontSize:15, fontWeight:700, color:'var(--text)' }}>{order.orderNo}</p>
-          <p style={{ fontSize:12, color:'var(--muted)', marginTop:1 }}>{order.supplier.name}</p>
+          <p className="text-[14px] font-semibold text-[#f0f2f5]">{order.orderNo}</p>
+          <p className="text-[11.5px] text-[#3a404f] mt-0.5">{order.supplier.name}</p>
         </div>
-        <button onClick={onClose}
-          style={{ width:28, height:28, borderRadius:7, border:'1px solid var(--border-subtle)',
-            background:'var(--hover-overlay)', color:'var(--muted-2)', cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <XCircle size={14} />
-        </button>
+        <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
       </div>
-
-      <div style={{ flex:1, overflowY:'auto', padding:'18px 22px' }}>
-        {/* Status + dates */}
-        <div style={{ background:'var(--card-bg)', borderRadius:10, padding:'14px 16px', marginBottom:16,
-          border:'1px solid var(--border-subtle)' }}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-            <span style={{ fontSize:12, color:'var(--muted)' }}>Status</span>
-            <Badge status={order.status} />
-          </div>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-            <span style={{ fontSize:12, color:'var(--muted)' }}>Order Date</span>
-            <span style={{ fontSize:12, color:'var(--muted-2)' }}>{fmtDate(order.orderDate)}</span>
-          </div>
-          {order.deliveryDate && (
-            <div style={{ display:'flex', justifyContent:'space-between' }}>
-              <span style={{ fontSize:12, color:'var(--muted)' }}>Delivered</span>
-              <span style={{ fontSize:12, color:'var(--status-delivered-text)' }}>{fmtDate(order.deliveryDate)}</span>
-            </div>
-          )}
+      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="border border-white/[0.055] rounded-xl bg-white/[0.02] p-4 space-y-2.5">
+          <div className="flex items-center justify-between"><span className="text-[12px] text-[#3a404f]">Status</span><Badge status={order.status} /></div>
+          <div className="flex items-center justify-between"><span className="text-[12px] text-[#3a404f]">Order Date</span><span className="text-[12px] text-[#c8cdd8]">{fmtDate(order.orderDate)}</span></div>
+          {order.deliveryDate && <div className="flex items-center justify-between"><span className="text-[12px] text-[#3a404f]">Delivered</span><span className="text-[12px] text-emerald-400">{fmtDate(order.deliveryDate)}</span></div>}
+          {order.notes && <div className="pt-2 border-t border-white/[0.04]"><p className="text-[11px] text-[#3a404f]">Notes</p><p className="text-[12.5px] text-[#c8cdd8] mt-1">{order.notes}</p></div>}
         </div>
-
-        {/* Items */}
-        <p style={{ fontSize:11, color:'var(--muted)', letterSpacing:'0.05em', textTransform:'uppercase', marginBottom:8 }}>Line Items</p>
-        <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:16 }}>
-          {order.items.map((item) => (
-            <div key={item.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
-              background:'var(--card-bg)', borderRadius:8, padding:'10px 14px',
-              border:'1px solid var(--border-subtle)' }}>
-              <div>
-                <p style={{ fontSize:13, color:'var(--text)', fontWeight:500 }}>{item.product.name}</p>
-                <p style={{ fontSize:11, color:'var(--muted)', marginTop:2 }}>Qty {item.quantity} × BDT {item.price.toLocaleString()}</p>
+        <div>
+          <Lbl>Line Items</Lbl>
+          <div className="space-y-1.5">
+            {order.items.map(item => (
+              <div key={item.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-white/[0.04] bg-white/[0.02]">
+                <div>
+                  <p className="text-[12.5px] font-medium text-[#e2e5eb]">{item.product.name}</p>
+                  <p className="text-[11px] text-[#3a404f]">{item.quantity} × {fmt(item.price)}</p>
+                </div>
+                <span className="text-[12.5px] font-semibold text-[#e2e5eb]">{fmt(item.total)}</span>
               </div>
-              <p style={{ fontSize:13, fontWeight:600, color:'var(--text)' }}>BDT {item.total.toLocaleString()}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        {/* Total */}
-        <div style={{ display:'flex', justifyContent:'space-between', padding:'14px 16px',
-          background:'var(--accent-100)', borderRadius:10, border:'1px solid var(--accent-200)' }}>
-          <span style={{ fontSize:13, color:'var(--info)' }}>Total</span>
-          <span style={{ fontSize:17, fontWeight:700, color:'var(--info)' }}>{fmt(order.total)}</span>
+        <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#1f6feb]/10 border border-[#1f6feb]/20">
+          <span className="text-[13px] text-[#6ea8fe]">Order Total</span>
+          <span className="text-[16px] font-bold text-[#6ea8fe]">{fmt(order.total)}</span>
         </div>
       </div>
     </div>
   </div>
 );
 
-/* ─── Main Component ──────────────────────────────────────────────────────── */
-const PurchaseOrders = () => {
-  const [orders, setOrders] = useState<PurchaseOrder[]>([]);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<{ field: SortField; dir: SortDir }>({ field: 'orderDate', dir: 'desc' });
-  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
+// ── Create modal ───────────────────────────────────────────────────────────────
 
-  const [formData, setFormData] = useState({
-    supplierId: 0, notes: '',
-    items: [{ productId: 0, quantity: 1, price: 0 }],
-  });
+const CreateModal = ({ suppliers, products, onClose, onCreated }: { suppliers: any[]; products: any[]; onClose: () => void; onCreated: () => void }) => {
+  const [form, setForm]     = useState({ supplierId: 0, notes: '', items: [{ productId: 0, quantity: 1, price: 0 }] });
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  const updateItem = (i: number, k: string, v: number) =>
+    setForm(f => { const items = [...f.items]; items[i] = { ...items[i], [k]: v }; return { ...f, items }; });
 
-  const fetchAll = async () => {
-    setLoading(true);
-    await Promise.all([fetchOrders(), fetchSuppliers(), fetchProducts()]);
-    setLoading(false);
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const response = await purchaseOrderAPI.getAll({});
-      setOrders(response.data.data);
-    } catch { toast.error('Failed to fetch orders'); }
-  };
-
-  const fetchSuppliers = async () => {
-    try {
-      const response = await supplierAPI.getAll();
-      setSuppliers(response.data.data);
-    } catch { toast.error('Failed to fetch suppliers'); }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await productAPI.getAll();
-      setProducts(response.data.data);
-    } catch { /* silent */ }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await purchaseOrderAPI.create(formData);
-      toast.success('Purchase order created');
-      setShowModal(false);
-      setFormData({ supplierId: 0, notes: '', items: [{ productId: 0, quantity: 1, price: 0 }] });
-      fetchOrders();
-    } catch { toast.error('Failed to create order'); }
+    if (!form.supplierId) return toast.error('Select a supplier');
+    if (form.items.some(it => !it.productId)) return toast.error('Select a product for every row');
+    setSaving(true);
+    try { await purchaseOrderAPI.create(form); toast.success('Order created'); onCreated(); }
+    catch { toast.error('Failed to create order'); }
+    finally { setSaving(false); }
   };
+
+  const subtotal = form.items.reduce((s, it) => s + it.quantity * it.price, 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={e => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="w-full max-w-2xl bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#1f6feb]/15 flex items-center justify-center"><Package size={14} className="text-[#6ea8fe]" /></div>
+            <div>
+              <p className="text-[14px] font-semibold text-[#f0f2f5]">New Purchase Order</p>
+              <p className="text-[11px] text-[#3a404f]">Order stock from a supplier</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
+        </div>
+        <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-5">
+          <div>
+            <Lbl>Supplier *</Lbl>
+            <select required value={form.supplierId} onChange={e => setForm(f => ({ ...f, supplierId: +e.target.value }))} className={`${inp} appearance-none`}>
+              <option value={0} disabled>Select a supplier…</option>
+              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Lbl>Order Items *</Lbl>
+              <button type="button" onClick={() => setForm(f => ({ ...f, items: [...f.items, { productId: 0, quantity: 1, price: 0 }] }))}
+                className="flex items-center gap-1 text-[12px] text-[#6ea8fe] hover:text-[#93c5fd] transition-colors">
+                <Plus size={11} /> Add row
+              </button>
+            </div>
+            <div className="grid grid-cols-[1fr_64px_100px_24px] gap-1.5 mb-2 px-0.5">
+              {['Product', 'Qty', 'Price (৳)', ''].map(h => <p key={h} className="text-[10px] uppercase tracking-wider text-[#3a404f] font-semibold">{h}</p>)}
+            </div>
+            <div className="space-y-2">
+              {form.items.map((item, i) => (
+                <div key={i} className="grid grid-cols-[1fr_64px_100px_24px] gap-1.5 items-center">
+                  <select required value={item.productId} onChange={e => updateItem(i, 'productId', +e.target.value)} className={`${inp} appearance-none`}>
+                    <option value={0} disabled>Select…</option>
+                    {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                  <input type="number" required min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', +e.target.value)} className={`${inp} text-center`} />
+                  <input type="number" required min="0" step="0.01" value={item.price} onChange={e => updateItem(i, 'price', +e.target.value)} className={inp} />
+                  <button type="button" onClick={() => setForm(f => ({ ...f, items: f.items.filter((_, j) => j !== i) }))}
+                    disabled={form.items.length === 1}
+                    className="w-6 h-6 flex items-center justify-center rounded-md text-[#3a404f] hover:text-red-400 hover:bg-red-400/10 disabled:opacity-20 transition-all">
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {subtotal > 0 && (
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/[0.05]">
+                <span className="text-[11.5px] text-[#3a404f]">Estimated total</span>
+                <span className="text-[14px] font-bold text-[#e2e5eb]">{fmt(subtotal)}</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <Lbl>Notes</Lbl>
+            <textarea rows={2} placeholder="Delivery instructions, references…" value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              className="w-full px-3 py-2.5 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 resize-none transition-all" />
+          </div>
+          <div className="flex gap-2.5 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">Cancel</button>
+            <button type="submit" disabled={saving} className="flex-[2] h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all">
+              {saving ? 'Creating…' : 'Create Order'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ── Main ───────────────────────────────────────────────────────────────────────
+
+const PurchaseOrders = () => {
+  const [orders, setOrders]       = useState<PurchaseOrder[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [products, setProducts]   = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [filter, setFilter]       = useState('all');
+  const [search, setSearch]       = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [drawer, setDrawer]       = useState<PurchaseOrder | null>(null);
+  const [menu, setMenu]           = useState<number | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [o, s, p] = await Promise.all([purchaseOrderAPI.getAll({}), supplierAPI.getAll(), productAPI.getAll()]);
+      setOrders(o.data.data); setSuppliers(s.data.data); setProducts(p.data.data);
+    } catch { toast.error('Failed to load data'); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
 
   const updateStatus = async (id: number, status: string) => {
     try {
-      const deliveryDate = status === 'DELIVERED' ? new Date().toISOString() : undefined;
-      await purchaseOrderAPI.updateStatus(id, { status, deliveryDate });
-      toast.success('Status updated');
-      setActiveMenu(null);
-      fetchOrders();
-    } catch { toast.error('Failed to update status'); }
+      await purchaseOrderAPI.updateStatus(id, { status, deliveryDate: status === 'DELIVERED' ? new Date().toISOString() : undefined });
+      toast.success('Status updated'); setMenu(null); load();
+    } catch { toast.error('Failed to update'); }
   };
 
-  const addItem = () => setFormData(f => ({ ...f, items: [...f.items, { productId: 0, quantity: 1, price: 0 }] }));
-  const removeItem = (i: number) => setFormData(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }));
-  const updateItem = (i: number, field: string, value: unknown) =>
-    setFormData(f => { const items = [...f.items]; items[i] = { ...items[i], [field]: value }; return { ...f, items }; });
-
-  const cycleSort = (field: SortField) =>
-    setSort(s => s.field === field ? { field, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { field, dir: 'desc' });
-
-  const filtered = useMemo(() => {
-    let list = orders.filter(o =>
-      (filterStatus === 'all' || o.status === filterStatus) &&
-      (o.orderNo.toLowerCase().includes(search.toLowerCase()) ||
-       o.supplier.name.toLowerCase().includes(search.toLowerCase()))
-    );
-    list = [...list].sort((a, b) => {
-      let va: string | number = sort.field === 'total' ? a.total : sort.field === 'orderDate' ? a.orderDate : a.orderNo;
-      let vb: string | number = sort.field === 'total' ? b.total : sort.field === 'orderDate' ? b.orderDate : b.orderNo;
-      return sort.dir === 'asc' ? (va < vb ? -1 : 1) : (va > vb ? -1 : 1);
-    });
-    return list;
-  }, [orders, filterStatus, search, sort]);
+  const visible = useMemo(() => {
+    const q = search.toLowerCase();
+    return orders
+      .filter(o => (filter === 'all' || o.status === filter) && (!q || o.orderNo.toLowerCase().includes(q) || o.supplier.name.toLowerCase().includes(q)))
+      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime());
+  }, [orders, filter, search]);
 
   const stats = useMemo(() => ({
-    total: orders.length,
-    pending: orders.filter(o => o.status === 'PENDING').length,
-    value: orders.filter(o => o.status !== 'CANCELLED').reduce((s, o) => s + o.total, 0),
+    pending:   orders.filter(o => o.status === 'PENDING').length,
     delivered: orders.filter(o => o.status === 'DELIVERED').length,
+    value:     orders.filter(o => o.status !== 'CANCELLED').reduce((s, o) => s + o.total, 0),
   }), [orders]);
 
-  /* ── input styles shared ── */
-  const inp: React.CSSProperties = {
-    background:'var(--card-bg)', border:'1px solid var(--border-subtle)', borderRadius:8,
-    color:'var(--text)', fontSize:13, padding:'8px 12px', outline:'none', width:'100%',
-    fontFamily:"'DM Sans', sans-serif",
-  };
-
-  if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:240 }}>
-      <div className="spinner w-12 h-12" />
-    </div>
-  );
-
   return (
-    <div style={{ fontFamily:"'DM Sans', sans-serif", color:'var(--text)' }}>
+    <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── Header ── */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'var(--text)', margin:0 }}>Purchase Orders</h1>
-          <p style={{ fontSize:12, color:'var(--muted)', marginTop:3 }}>{orders.length} total orders</p>
+          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Purchase Orders</h1>
+          <p className="text-[11.5px] text-[#3a404f] mt-0.5">{orders.length} total orders</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          style={{ display:'flex', alignItems:'center', gap:6, background:'var(--accent)', color:'#fff',
-            border:'none', borderRadius:9, padding:'9px 16px', fontSize:13, fontWeight:600,
-            cursor:'pointer', letterSpacing:'-0.01em' }}>
-          <Plus size={15} /> Create Order
+        <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
+          <Plus size={13} /> Create Order
         </button>
       </div>
 
-      {/* ── Stats row ── */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
-        <Stat label="Total Orders" value={String(stats.total)} />
-        <Stat label="Pending" value={String(stats.pending)} sub="awaiting delivery" />
-        <Stat label="Delivered" value={String(stats.delivered)} />
-        <Stat label="Total Value" value={`BDT ${(stats.value/1000).toFixed(1)}k`} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Total Orders', value: `${orders.length}`,   color: 'text-[#e2e5eb]' },
+          { label: 'Pending',      value: `${stats.pending}`,   color: 'text-amber-400'  },
+          { label: 'Delivered',    value: `${stats.delivered}`, color: 'text-emerald-400'},
+          { label: 'Total Value',  value: fmt(stats.value),     color: 'text-[#6ea8fe]'  },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-4 py-3.5 hover:border-white/[0.09] transition-colors">
+            <p className="text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{label}</p>
+            <p className={`text-[20px] font-bold mt-1 leading-none ${color}`}>{value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Toolbar ── */}
-      <div style={{ display:'flex', gap:10, marginBottom:16, alignItems:'center', flexWrap:'wrap' }}>
-        {/* Search */}
-        <div style={{ position:'relative', flex:1, minWidth:200 }}>
-          <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'var(--muted)' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search orders or suppliers…"
-            style={{ ...inp, paddingLeft:30, width:'100%' }} />
-        </div>
-
-        {/* Status filters */}
-        <div style={{ display:'flex', gap:4, background:'var(--card-bg)', padding:4, borderRadius:9,
-          border:'1px solid var(--border-subtle)' }}>
-          {['all','PENDING','DELIVERED','CANCELLED'].map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)}
-                style={{ fontSize:12, fontWeight:500, padding:'5px 12px', borderRadius:6, border:'none',
-                cursor:'pointer', transition:'all 0.12s',
-                background: filterStatus === s ? 'var(--accent)' : 'transparent',
-                color: filterStatus === s ? '#fff' : 'var(--muted-2)' }}>
-              {s === 'all' ? 'All' : s.charAt(0)+s.slice(1).toLowerCase()}
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+          {(['all','PENDING','DELIVERED','CANCELLED'] as const).map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-3 h-7 text-[12px] font-medium rounded-md transition-all ${filter === s ? 'bg-[#1f6feb] text-white' : 'text-[#3a404f] hover:text-[#c8cdd8]'}`}>
+              {s === 'all' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
-
-        {/* Sort */}
-        <button onClick={() => cycleSort('orderDate')}
-          style={{ ...inp, width:'auto', display:'flex', alignItems:'center', gap:5,
-        cursor:'pointer', color:'var(--muted-2)', whiteSpace:'nowrap' }}>
-          <ArrowUpDown size={12} /> Date {sort.field==='orderDate' ? (sort.dir==='asc'?'↑':'↓') : ''}
-        </button>
-        <button onClick={() => cycleSort('total')}
-          style={{ ...inp, width:'auto', display:'flex', alignItems:'center', gap:5,
-            cursor:'pointer', color:'#9ca3af', whiteSpace:'nowrap' }}>
-          <TrendingUp size={12} /> Value {sort.field==='total' ? (sort.dir==='asc'?'↑':'↓') : ''}
-        </button>
+        <div className="relative max-w-xs flex-1">
+          <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3a404f]" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Order no. or supplier…"
+            className="w-full h-8 pl-8 pr-8 text-[12.5px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all" />
+          {search && <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a404f] hover:text-[#c8cdd8]"><X size={11} /></button>}
+        </div>
+        <span className="text-[11.5px] text-[#3a404f] ml-auto">{visible.length} order{visible.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* ── Table ── */}
-      {filtered.length === 0 ? (
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-          background:'var(--card-bg)', border:'1px solid var(--border-subtle)', borderRadius:12,
-          padding:'60px 0', gap:12 }}>
-          <Package size={36} color="var(--muted)" />
-          <p style={{ color:'var(--muted)', fontSize:14 }}>No orders match your filters</p>
-          <button onClick={() => setShowModal(true)}
-            style={{ background:'var(--accent)', color:'#fff', border:'none', borderRadius:8,
-              padding:'8px 18px', fontSize:13, fontWeight:600, cursor:'pointer' }}>
-            Create Order
-          </button>
+      {/* Table */}
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <div className="w-7 h-7 rounded-full border-2 border-white/10 border-t-[#1f6feb] animate-spin" />
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-52 border border-white/[0.055] rounded-xl bg-white/[0.02] gap-3">
+          <Receipt size={26} className="text-[#3a404f]" />
+          <p className="text-[13px] text-[#3a404f]">{search || filter !== 'all' ? 'No matching orders' : 'No orders yet'}</p>
+          {!search && filter === 'all' && <button onClick={() => setShowModal(true)} className="text-[12.5px] text-[#6ea8fe] hover:underline">Create one</button>}
         </div>
       ) : (
-        <div style={{ background:'var(--card-bg)', border:'1px solid var(--border-subtle)', borderRadius:12, overflow:'hidden' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+        <div className="border border-white/[0.055] rounded-xl overflow-hidden">
+          <table className="w-full text-[12.5px]">
             <thead>
-              <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-                {['Order','Supplier','Date','Items','Total','Status',''].map((h, i) => (
-                  <th key={i} style={{ padding:'11px 16px', textAlign: i>=4 ? 'right' : 'left',
-                    fontSize:11, fontWeight:600, color:'var(--muted)',
-                    letterSpacing:'0.05em', textTransform:'uppercase' }}>{h}</th>
+              <tr className="border-b border-white/[0.05]">
+                {['Order', 'Supplier', 'Date', 'Items', 'Total', 'Status', ''].map((h, i) => (
+                  <th key={i} className={`px-4 py-3 text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f] ${i >= 3 ? 'text-right' : 'text-left'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((order, idx) => (
-                <tr key={order.id}
-                  style={{ borderBottom: idx < filtered.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                    transition:'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <td style={{ padding:'12px 16px' }}>
-                    <span style={{ fontSize:13, fontWeight:600, color:'var(--info)', fontFamily:'DM Mono, monospace' }}>
-                      {order.orderNo}
-                    </span>
-                  </td>
-                  <td style={{ padding:'12px 16px', fontSize:13, color:'var(--muted-2)' }}>{order.supplier.name}</td>
-                  <td style={{ padding:'12px 16px', fontSize:12, color:'var(--muted-2)' }}>
-                    <span style={{ display:'flex', alignItems:'center', gap:5 }}>
-                      <CalendarDays size={11} /> {fmtDate(order.orderDate)}
-                    </span>
-                  </td>
-                  <td style={{ padding:'12px 16px', fontSize:12, color:'var(--muted-2)', textAlign:'right' }}>
-                    {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                  </td>
-                  <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'var(--text)', textAlign:'right', fontFamily:'DM Mono, monospace' }}>
-                    {fmt(order.total)}
-                  </td>
-                  <td style={{ padding:'12px 16px', textAlign:'right' }}>
-                    <Badge status={order.status} />
-                  </td>
-                  <td style={{ padding:'12px 16px', textAlign:'right' }}>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:4, position:'relative' }}>
-                      <button onClick={() => setSelectedOrder(order)}
-                        style={{ padding:'5px', borderRadius:6, border:'1px solid var(--border-subtle)',
-                          background:'transparent', color:'var(--muted)', cursor:'pointer',
-                          display:'flex', alignItems:'center' }}>
-                        <Eye size={13} />
+              {visible.map((o, i) => (
+                <tr key={o.id} className={`border-b border-white/[0.035] hover:bg-white/[0.025] transition-colors ${i % 2 ? 'bg-white/[0.01]' : ''}`}>
+                  <td className="px-4 py-3 font-semibold text-[#6ea8fe] font-mono text-[12px]">{o.orderNo}</td>
+                  <td className="px-4 py-3 text-[#c8cdd8]">{o.supplier.name}</td>
+                  <td className="px-4 py-3 text-[#6b7280]">{fmtDate(o.orderDate)}</td>
+                  <td className="px-4 py-3 text-[#6b7280] text-right">{o.items.length}</td>
+                  <td className="px-4 py-3 font-semibold text-[#e2e5eb] text-right font-mono">{fmt(o.total)}</td>
+                  <td className="px-4 py-3 text-right"><Badge status={o.status} /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button onClick={() => setDrawer(o)} className="w-6 h-6 flex items-center justify-center rounded-md text-[#3a404f] hover:text-[#6ea8fe] hover:bg-[#1f6feb]/10 transition-all">
+                        <Eye size={12} />
                       </button>
-                      {order.status === 'PENDING' && (
-                        <div style={{ position:'relative' }}>
-                          <button onClick={() => setActiveMenu(activeMenu === order.id ? null : order.id)}
-                            style={{ padding:'5px', borderRadius:6, border:'1px solid rgba(255,255,255,0.07)',
-                              background:'transparent', color:'#6b7280', cursor:'pointer',
-                              display:'flex', alignItems:'center' }}>
-                            <MoreHorizontal size={13} />
+                      {o.status === 'PENDING' && (
+                        <div className="relative">
+                          <button onClick={() => setMenu(menu === o.id ? null : o.id)} className="w-6 h-6 flex items-center justify-center rounded-md text-[#3a404f] hover:text-[#c8cdd8] hover:bg-white/[0.06] transition-all">
+                            <MoreHorizontal size={12} />
                           </button>
-                          {activeMenu === order.id && (
-                            <div style={{ position:'absolute', right:0, top:'calc(100% + 4px)', zIndex:50,
-                              background:'var(--card-bg)', border:'1px solid var(--border-subtle)',
-                              borderRadius:9, padding:4, minWidth:160, boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
-                              <button onClick={() => updateStatus(order.id, 'DELIVERED')}
-                                style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
-                                  background:'transparent', border:'none', color:'var(--status-delivered-text)', cursor:'pointer',
-                                  fontSize:13, borderRadius:6, textAlign:'left' }}>
-                                <Truck size={13} /> Mark Delivered
+                          {menu === o.id && (
+                            <div className="absolute right-0 top-full mt-1 z-30 bg-[#13161c] border border-white/[0.08] rounded-xl shadow-2xl py-1 w-40">
+                              <button onClick={() => updateStatus(o.id, 'DELIVERED')} className="w-full flex items-center gap-2 px-3.5 py-2 text-[12.5px] text-emerald-400 hover:bg-white/[0.04] transition-colors">
+                                <Truck size={12} /> Mark Delivered
                               </button>
-                              <button onClick={() => updateStatus(order.id, 'CANCELLED')}
-                                style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
-                                  background:'transparent', border:'none', color:'var(--status-cancelled-text)', cursor:'pointer',
-                                  fontSize:13, borderRadius:6, textAlign:'left' }}>
-                                <XCircle size={13} /> Cancel Order
+                              <button onClick={() => updateStatus(o.id, 'CANCELLED')} className="w-full flex items-center gap-2 px-3.5 py-2 text-[12.5px] text-red-400 hover:bg-white/[0.04] transition-colors">
+                                <XCircle size={12} /> Cancel
                               </button>
                             </div>
                           )}
@@ -394,148 +324,15 @@ const PurchaseOrders = () => {
               ))}
             </tbody>
           </table>
-          <div style={{ padding:'10px 16px', borderTop:'1px solid rgba(255,255,255,0.05)',
-            fontSize:11, color:'#4b5563' }}>
-            Showing {filtered.length} of {orders.length} orders
+          <div className="px-4 py-2.5 border-t border-white/[0.04] text-[11px] text-[#3a404f]">
+            Showing {visible.length} of {orders.length} orders
           </div>
         </div>
       )}
 
-      {/* ── Detail Drawer ── */}
-      {selectedOrder && <DetailDrawer order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
-
-      {/* ── Create Modal ── */}
-      {showModal && (
-        <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex',
-          alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
-          <div style={{ background:'#111318', border:'1px solid rgba(255,255,255,0.08)',
-            borderRadius:14, width:'100%', maxWidth:680, maxHeight:'90vh',
-            display:'flex', flexDirection:'column', fontFamily:"'DM Sans', sans-serif" }}>
-
-            {/* Modal header */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
-              padding:'18px 22px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:'rgba(31,111,235,0.15)',
-                  display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <Package size={15} color="#6ea8fe" />
-                </div>
-                <div>
-                  <p style={{ fontSize:14, fontWeight:700, color:'#f0f2f5', margin:0 }}>New Purchase Order</p>
-                  <p style={{ fontSize:11, color:'#6b7280', margin:0, marginTop:1 }}>Fill in supplier and items</p>
-                </div>
-              </div>
-              <button onClick={() => setShowModal(false)}
-                style={{ width:28, height:28, borderRadius:7, border:'1px solid rgba(255,255,255,0.08)',
-                  background:'rgba(255,255,255,0.04)', color:'#9ca3af', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <XCircle size={14} />
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <form onSubmit={handleSubmit}
-              style={{ flex:1, overflowY:'auto', padding:'20px 22px', display:'flex', flexDirection:'column', gap:18 }}>
-
-              <div>
-                <label style={{ fontSize:11, color:'#6b7280', letterSpacing:'0.05em',
-                  textTransform:'uppercase', display:'block', marginBottom:6 }}>Supplier *</label>
-                <select required value={formData.supplierId}
-                  onChange={e => setFormData({ ...formData, supplierId: Number(e.target.value) })}
-                  style={{ ...inp }}>
-                  <option value={0} disabled>Select supplier…</option>
-                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                  <label style={{ fontSize:11, color:'#6b7280', letterSpacing:'0.05em', textTransform:'uppercase' }}>
-                    Order Items *
-                  </label>
-                  <button type="button" onClick={addItem}
-                    style={{ display:'flex', alignItems:'center', gap:4, fontSize:12,
-                      color:'#6ea8fe', background:'transparent', border:'none', cursor:'pointer', fontWeight:500 }}>
-                    <Plus size={12} /> Add Item
-                  </button>
-                </div>
-
-                {/* Column headers */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 80px 110px 28px',
-                  gap:6, marginBottom:6, padding:'0 2px' }}>
-                  {['Product','Qty','Unit Price',''].map((h, i) => (
-                    <span key={i} style={{ fontSize:10, color:'#4b5563', letterSpacing:'0.05em', textTransform:'uppercase' }}>{h}</span>
-                  ))}
-                </div>
-
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {formData.items.map((item, idx) => (
-                    <div key={idx} style={{ display:'grid', gridTemplateColumns:'1fr 80px 110px 28px', gap:6, alignItems:'center' }}>
-                      <select required value={item.productId}
-                        onChange={e => updateItem(idx, 'productId', Number(e.target.value))}
-                        style={{ ...inp }}>
-                        <option value={0} disabled>Select…</option>
-                        {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
-                      <input type="number" required min="1" placeholder="1" value={item.quantity}
-                        onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
-                        style={{ ...inp, textAlign:'center' }} />
-                      <input type="number" required min="0" step="0.01" placeholder="0.00" value={item.price}
-                        onChange={e => updateItem(idx, 'price', Number(e.target.value))}
-                        style={{ ...inp }} />
-                      {formData.items.length > 1 ? (
-                        <button type="button" onClick={() => removeItem(idx)}
-                          style={{ background:'transparent', border:'none', color:'#6b7280',
-                            cursor:'pointer', padding:4, display:'flex', alignItems:'center',
-                            borderRadius:5, width:28, justifyContent:'center' }}>
-                          <XCircle size={14} />
-                        </button>
-                      ) : <span />}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Live total */}
-                {formData.items.some(i => i.price > 0 && i.quantity > 0) && (
-                  <div style={{ marginTop:10, textAlign:'right', fontSize:12, color:'#9ca3af' }}>
-                    Subtotal:{' '}
-                    <span style={{ color:'#6ea8fe', fontWeight:600 }}>
-                      BDT {formData.items.reduce((s, i) => s + i.quantity * i.price, 0).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label style={{ fontSize:11, color:'#6b7280', letterSpacing:'0.05em',
-                  textTransform:'uppercase', display:'block', marginBottom:6 }}>Notes</label>
-                <textarea value={formData.notes} rows={3}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Optional notes…"
-                  style={{ ...inp, resize:'vertical', lineHeight:1.5 }} />
-              </div>
-
-              <div style={{ display:'flex', gap:8, paddingTop:4 }}>
-                <button type="button" onClick={() => setShowModal(false)}
-                  style={{ flex:1, padding:'10px', borderRadius:9, border:'1px solid rgba(255,255,255,0.08)',
-                    background:'transparent', color:'#9ca3af', fontSize:13, fontWeight:600, cursor:'pointer' }}>
-                  Cancel
-                </button>
-                <button type="submit"
-                  style={{ flex:2, padding:'10px', borderRadius:9, border:'none',
-                    background:'#1f6feb', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>
-                  Create Purchase Order
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Click-away for dropdown */}
-      {activeMenu !== null && (
-        <div style={{ position:'fixed', inset:0, zIndex:40 }} onClick={() => setActiveMenu(null)} />
-      )}
+      {menu !== null && <div className="fixed inset-0 z-20" onClick={() => setMenu(null)} />}
+      {drawer    && <Drawer order={drawer} onClose={() => setDrawer(null)} />}
+      {showModal && <CreateModal suppliers={suppliers} products={products} onClose={() => setShowModal(false)} onCreated={() => { setShowModal(false); load(); }} />}
     </div>
   );
 };

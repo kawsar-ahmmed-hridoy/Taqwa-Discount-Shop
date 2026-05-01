@@ -30,8 +30,11 @@ export const putStaff = async (req: Request, res: Response): Promise<any> => {
 
 export const removeStaff = async (req: Request, res: Response): Promise<any> => {
   try {
-    await deleteStaff(Number(req.params.id));
-    return res.json({ success: true, message: 'Staff deleted successfully' });
+    const result = await deleteStaff(Number(req.params.id));
+    const message = 'isActive' in result && result.isActive === false
+      ? 'Staff deactivated successfully'
+      : 'Staff deleted successfully';
+    return res.json({ success: true, message });
   } catch {
     return res.status(500).json({ success: false, message: 'Failed to delete staff' });
   }

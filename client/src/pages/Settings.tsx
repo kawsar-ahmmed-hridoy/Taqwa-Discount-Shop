@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
-import { settingsAPI, authAPI } from '../services/api';
-import { useAuthStore } from '../store/authStore';
+import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import {
-  Save, DollarSign, Percent, Globe,
-  Eye, EyeOff, User, Phone, Mail,
-} from 'lucide-react';
+import { Percent, DollarSign, Globe, Save } from 'lucide-react';
 
 /* ─── Primitives ──────────────────────────────────────────────────────────── */
 const F: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
@@ -49,43 +45,7 @@ const IconWrap = ({ icon: Icon, children, right }: {
   </div>
 );
 
-const PasswordInput = ({ value, onChange, placeholder, required }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean;
-}) => {
-  const [show, setShow] = useState(false);
-  return (
-    <div style={{ position: 'relative' }}>
-      <input type={show ? 'text' : 'password'} value={value} placeholder={placeholder}
-        required={required} onChange={e => onChange(e.target.value)}
-        style={{ ...inp, paddingRight: 36 }} />
-      <button type="button" onClick={() => setShow(s => !s)}
-        style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', padding: 2 }}>
-        {show ? <EyeOff size={13} /> : <Eye size={13} />}
-      </button>
-    </div>
-  );
-};
 
-const PasswordStrength = ({ pw }: { pw: string }) => {
-  if (!pw) return null;
-  const score = [/.{6,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length;
-  const map = ['#374151', '#ef4444', '#f59e0b', '#3b82f6', '#10b981'];
-  const labels = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
-  return (
-    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 3, flex: 1 }}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{ flex: 1, height: 2.5, borderRadius: 2,
-            background: i <= score ? map[score] : 'var(--panel-bg)',
-            transition: 'background 0.2s' }} />
-        ))}
-      </div>
-      <span style={{ fontSize: 11, color: map[score], minWidth: 52 }}>{labels[score]}</span>
-    </div>
-  );
-};
 
 const SaveRow = ({ saving, onClear }: { saving: boolean; onClear?: () => void }) => (
   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 18 }}>
@@ -126,130 +86,50 @@ const CURRENCIES = [
 
 /* ─── Main ────────────────────────────────────────────────────────────────── */
 const Settings = () => {
-  const { user, setUser } = useAuthStore();
-
-  const [loading, setLoading]             = useState(true);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingGeneral, setSavingGeneral] = useState(false);
-
-  const [profile, setProfile] = useState({
-    fullName: user?.fullName ?? '',
-    email:    user?.email    ?? '',
-    phone:    user?.phone    ?? '',
-  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [general, setGeneral] = useState({
-    vat_rate: '5', currency: 'BDT', loyalty_points_rate: '1',
+    vat_rate: '5',
+    currency: 'BDT',
+    loyalty_points_rate: '1',
   });
 
-  const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
-
   useEffect(() => {
-    settingsAPI.get()
+    settingsAPI
+      .get()
       .then(r => setGeneral(r.data.data))
       .catch(() => toast.error('Failed to load settings'))
       .finally(() => setLoading(false));
   }, []);
 
-  const saveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingProfile(true);
-    try {
-      const res = await authAPI.updateProfile(profile);
-      setUser({ ...user, ...res.data.data });
-      toast.success('Profile updated');
-    } catch { toast.error('Failed to update profile'); }
-    finally { setSavingProfile(false); }
-  };
-
   const saveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingGeneral(true);
+    setSaving(true);
     try {
       await settingsAPI.update(general);
       toast.success('Settings saved');
-    } catch { toast.error('Failed to save settings'); }
-    finally { setSavingGeneral(false); }
+    } catch {
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const savePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pw.next !== pw.confirm) return toast.error('Passwords do not match');
-    if (pw.next.length < 6)    return toast.error('Password must be at least 6 characters');
-    try {
-      await authAPI.resetPassword({ currentPassword: pw.current, newPassword: pw.next });
-      toast.success('Password changed');
-      setPw({ current: '', next: '', confirm: '' });
-    } catch { toast.error('Failed to change password'); }
-  };
-
-  const initials = (profile.fullName || user?.fullName || '')
-    .split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
-      <div className="spinner w-10 h-10" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 260 }}>
+        <div className="spinner w-10 h-10" />
+      </div>
+    );
 
   return (
-    <div style={{ ...F, color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-
+    <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── Page heading ── */}
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Settings</h1>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>Manage your profile and system preferences</p>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>Configure system preferences</p>
       </div>
-
-      {/* ══ Profile ══════════════════════════════════════════════════════════ */}
-      <Card>
-        {/* Avatar strip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22,
-          padding: '12px 16px', background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-            background: 'linear-gradient(135deg,#1f4ded,#1f6feb)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, fontWeight: 700, color: '#fff' }}>
-            {initials}
-          </div>
-          <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', margin: 0 }}>
-              {profile.fullName || 'Your Name'}
-            </p>
-            <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-              {user?.role ?? 'User'}{profile.email ? ` · ${profile.email}` : ''}
-            </p>
-          </div>
-        </div>
-
-        <SectionHeader label="Personal Information" sub="Update your name, email, and contact details" />
-
-        <form onSubmit={saveProfile}>
-          <Field label="Full Name" hint="Shown throughout the app">
-            <IconWrap icon={User}>
-              <input type="text" value={profile.fullName} placeholder="e.g. Mahbub Rahman"
-                onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30 }} />
-            </IconWrap>
-          </Field>
-          <Field label="Email Address" hint="Used for login and notifications">
-            <IconWrap icon={Mail}>
-              <input type="email" value={profile.email} placeholder="you@example.com"
-                onChange={e => setProfile(p => ({ ...p, email: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30 }} />
-            </IconWrap>
-          </Field>
-          <Field label="Phone Number" hint="Optional contact number">
-            <IconWrap icon={Phone}>
-              <input type="tel" value={profile.phone} placeholder="+880 1XXXXXXXXX"
-                onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30 }} />
-            </IconWrap>
-          </Field>
-          <SaveRow saving={savingProfile} />
-        </form>
-      </Card>
 
       {/* ══ General ══════════════════════════════════════════════════════════ */}
       <Card>
@@ -257,64 +137,57 @@ const Settings = () => {
         <form onSubmit={saveGeneral}>
           <Field label="VAT Rate" hint="Applied at checkout on taxable items">
             <IconWrap icon={Percent} right="%">
-              <input type="number" min="0" max="100" step="0.01" value={general.vat_rate}
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={general.vat_rate}
                 onChange={e => setGeneral(g => ({ ...g, vat_rate: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30, paddingRight: 28 }} />
+                style={{ ...inp, paddingLeft: 30, paddingRight: 28 }}
+              />
             </IconWrap>
           </Field>
           <Field label="Currency" hint="Display currency used system-wide">
             <IconWrap icon={Globe}>
-              <select value={general.currency}
+              <select
+                value={general.currency}
                 onChange={e => setGeneral(g => ({ ...g, currency: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30, appearance: 'none' }}>
-                {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                style={{ ...inp, paddingLeft: 30, appearance: 'none' }}
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
             </IconWrap>
           </Field>
 
           <Divider />
 
-          <Field label="Loyalty Points Rate"
-            hint={`Points per 1 ${general.currency} spent${Number(general.loyalty_points_rate) > 0
-              ? ` · 1,000 ${general.currency} = ${(1000 * Number(general.loyalty_points_rate)).toLocaleString()} pts`
-              : ''}`}>
+          <Field
+            label="Loyalty Points Rate"
+            hint={`Points per 1 ${general.currency} spent${
+              Number(general.loyalty_points_rate) > 0
+                ? ` · 1,000 ${general.currency} = ${(1000 * Number(general.loyalty_points_rate)).toLocaleString()} pts`
+                : ''
+            }`}
+          >
             <IconWrap icon={DollarSign}>
-              <input type="number" min="0" step="0.01" value={general.loyalty_points_rate}
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={general.loyalty_points_rate}
                 onChange={e => setGeneral(g => ({ ...g, loyalty_points_rate: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30 }} />
+                style={{ ...inp, paddingLeft: 30 }}
+              />
             </IconWrap>
           </Field>
-          <SaveRow saving={savingGeneral} />
+          <SaveRow saving={saving} />
         </form>
       </Card>
-
-      {/* ══ Password ═════════════════════════════════════════════════════════ */}
-      <Card>
-        <SectionHeader label="Change Password" sub="Keep your account secure with a strong password" />
-        <form onSubmit={savePassword}>
-          <Field label="Current Password">
-            <PasswordInput value={pw.current} required
-              onChange={v => setPw(p => ({ ...p, current: v }))} />
-          </Field>
-          <Field label="New Password" hint="Min. 6 characters">
-            <PasswordInput value={pw.next} required placeholder="Min. 6 characters"
-              onChange={v => setPw(p => ({ ...p, next: v }))} />
-            <PasswordStrength pw={pw.next} />
-          </Field>
-          <Field label="Confirm Password">
-            <PasswordInput value={pw.confirm} required
-              onChange={v => setPw(p => ({ ...p, confirm: v }))} />
-            {pw.confirm && (
-              <p style={{ fontSize: 11, marginTop: 6,
-                color: pw.next === pw.confirm ? '#34d399' : '#f87171' }}>
-                {pw.next === pw.confirm ? 'Passwords match' : 'Passwords do not match'}
-              </p>
-            )}
-          </Field>
-          <SaveRow saving={false} onClear={() => setPw({ current: '', next: '', confirm: '' })} />
-        </form>
-      </Card>
-
     </div>
   );
 };

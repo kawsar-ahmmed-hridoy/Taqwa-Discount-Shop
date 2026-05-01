@@ -2,9 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractToken } from '../utils';
 import { RequestWithUser, UserRole } from '../types';
 import { HTTP_STATUS, MESSAGES } from '../constants';
+import { getPrismaClient } from '../config';
+
+const prisma = getPrismaClient();
 
 
-export const authenticate = (req: Request, res: Response, next: NextFunction): any => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction): any => {
   try {
     const authHeader = req.headers.authorization;
     const token = extractToken(authHeader);
@@ -27,7 +30,25 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): a
       });
     }
 
-    (req as RequestWithUser).user = user;
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, email: true, fullName: true, role: true, isActive: true },
+    });
+
+    if (!currentUser || !currentUser.isActive) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: MESSAGES.UNAUTHORIZED,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
+      });
+    }
+
+    (req as RequestWithUser).user = {
+      id: currentUser.id,
+      email: currentUser.email,
+      name: currentUser.fullName,
+      role: currentUser.role,
+    };
     next();
   } catch (error) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({

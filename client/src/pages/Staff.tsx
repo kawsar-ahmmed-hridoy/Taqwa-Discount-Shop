@@ -91,8 +91,8 @@ const StaffPage = () => {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await staffAPI.delete(deleteId);
-      toast.success('Staff removed');
+      const res = await staffAPI.delete(deleteId);
+      toast.success(res.data?.message ?? 'Staff removed');
       setDeleteId(null);
       fetchStaff();
     } catch { toast.error('Failed to delete'); }
@@ -132,7 +132,7 @@ const StaffPage = () => {
   );
 
   return (
-    <div style={{ ...F, color: 'var(--text)' }}>
+    <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 22 }}>

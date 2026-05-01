@@ -13,6 +13,7 @@ import Expenses from './pages/Expenses';
 import Staff from './pages/Staff';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import ProfileInfoPage from './pages/ProfileInfoPage';
 import Layout from './components/Layout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -45,6 +46,7 @@ function App() {
             <Route path="staff" element={<Staff />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="profile" element={<ProfileInfoPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

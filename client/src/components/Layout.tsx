@@ -14,6 +14,7 @@ const menuItems = [
   { path: '/expenses', label: 'Expenses', roles: ['OWNER', 'MANAGER'] },
   { path: '/staff', label: 'Staff', roles: ['OWNER', 'MANAGER'] },
   { path: '/reports', label: 'Reports', roles: ['OWNER', 'MANAGER'] },
+  { path: '/profile', label: 'Profile', roles: ['OWNER', 'MANAGER', 'STAFF'] },
   { path: '/settings', label: 'Settings', roles: ['OWNER'] },
 ];
 
@@ -47,6 +48,7 @@ const Layout = () => {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         onLogout={handleLogout}
+        onProfileClick={() => navigate('/profile')}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">

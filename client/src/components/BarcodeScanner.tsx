@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, CameraOff, X } from 'lucide-react';
+import { Camera, CameraOff, X, ScanLine, AlertCircle } from 'lucide-react';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -8,99 +8,136 @@ interface BarcodeScannerProps {
 }
 
 const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [error, setError] = useState<string>('');
+  const scannerRef  = useRef<Html5Qrcode | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [error, setError]       = useState('');
+  const [flash, setFlash]       = useState(false); // success flash
 
-  const startScanning = async () => {
+  const stop = async () => {
+    if (scannerRef.current?.isScanning) {
+      try { await scannerRef.current.stop(); } catch {}
+    }
+    setScanning(false);
+  };
+
+  const start = async () => {
+    setError('');
     try {
-      setError('');
-      const scanner = new Html5Qrcode('barcode-scanner');
+      const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
-
       await scanner.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 300, height: 300 },
-        },
-        (decodedText) => {
-          onScan(decodedText);
-          stopScanning();
+        { fps: 12, qrbox: { width: 240, height: 240 } },
+        (text) => {
+          setFlash(true);
+          setTimeout(() => setFlash(false), 500);
+          onScan(text);
+          stop();
         },
         () => {}
       );
-      setIsScanning(true);
-    } catch (err) {
-      setError('Failed to access camera. Please ensure camera permissions are granted.');
-      console.error('Scanner error:', err);
+      setScanning(true);
+    } catch {
+      setError('Camera access denied. Check your browser permissions and try again.');
     }
   };
 
-  const stopScanning = async () => {
-    if (scannerRef.current?.isScanning) {
-      try {
-        await scannerRef.current.stop();
-        setIsScanning(false);
-      } catch (err) {
-        console.error('Error stopping scanner:', err);
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      stopScanning();
-    };
-  }, []);
+  useEffect(() => () => { stop(); }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Barcode Scanner</h3>
+    <div className="bg-[#13161c] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl w-auto"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${scanning ? 'bg-[#1f6feb]/20' : 'bg-white/[0.04]'}`}>
+            <ScanLine size={14} className={scanning ? 'text-[#6ea8fe]' : 'text-[#3a404f]'} />
+          </div>
+          <div>
+            <p className="text-[13.5px] font-semibold text-[#f0f2f5]">Barcode Scanner</p>
+            <p className="text-[10.5px] text-[#3a404f]">{scanning ? 'Scanning…' : 'Ready to scan'}</p>
+          </div>
+        </div>
         {onClose && (
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X size={20} />
+          <button onClick={() => { stop(); onClose(); }}
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
+            <X size={14} />
           </button>
         )}
       </div>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
-        </div>
-      )}
+      {/* Viewfinder */}
+      <div className="relative bg-[#0d0f13] aspect-square overflow-hidden">
+        {/* Scanner mount */}
+        <div id="qr-reader" className="w-full h-full [&>video]:w-full [&>video]:h-full [&>video]:object-cover [&>img]:hidden [&_div:last-child]:hidden" />
 
-      <div className="space-y-4">
-        <div id="barcode-scanner" className="w-full max-w-md mx-auto border-2 border-gray-200 rounded-lg overflow-hidden"></div>
-        
-        <div className="flex gap-3 justify-center">
-          {!isScanning ? (
-            <button
-              onClick={startScanning}
-              className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              <Camera size={20} />
-              Start Scanning
-            </button>
-          ) : (
-            <button
-              onClick={stopScanning}
-              className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <CameraOff size={20} />
-              Stop Scanning
-            </button>
-          )}
-        </div>
+        {/* Idle overlay */}
+        {!scanning && !error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d0f13]">
+            <div className="w-16 h-16 rounded-2xl border-2 border-white/[0.08] bg-white/[0.03] flex items-center justify-center">
+              <Camera size={28} className="text-[#3a404f]" />
+            </div>
+            <p className="text-[12px] text-[#3a404f]">Camera preview will appear here</p>
+          </div>
+        )}
 
-        <div className="text-sm text-gray-600 text-center">
-          Position the barcode within the frame to scan
-        </div>
+        {/* Scanning reticle */}
+        {scanning && (
+          <>
+            {/* Corner brackets */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="relative w-52 h-52">
+                {[['top-0 left-0 border-t-2 border-l-2 rounded-tl-lg'],['top-0 right-0 border-t-2 border-r-2 rounded-tr-lg'],['bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg'],['bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg']].map(([cls], i) => (
+                  <div key={i} className={`absolute w-7 h-7 border-[#1f6feb] ${cls}`} />
+                ))}
+                {/* Scan line animation */}
+                <div className="absolute left-1 right-1 h-0.5 bg-gradient-to-r from-transparent via-[#1f6feb] to-transparent animate-[scanline_2s_ease-in-out_infinite]" style={{ top: '50%' }} />
+              </div>
+            </div>
+            {/* Dark vignette corners */}
+            <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(13,15,19,0.7) 100%)' }} />
+          </>
+        )}
+
+        {/* Success flash */}
+        {flash && <div className="absolute inset-0 bg-emerald-400/20 animate-pulse pointer-events-none" />}
+
+        {/* Error overlay */}
+        {error && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d0f13] px-6 text-center">
+            <div className="w-12 h-12 rounded-xl bg-red-400/10 border border-red-400/20 flex items-center justify-center">
+              <AlertCircle size={20} className="text-red-400" />
+            </div>
+            <p className="text-[12px] text-[#c8cdd8] leading-relaxed">{error}</p>
+            <button onClick={() => setError('')} className="text-[12px] text-[#6ea8fe] hover:underline">Dismiss</button>
+          </div>
+        )}
       </div>
+
+      {/* Controls */}
+      <div className="px-5 py-4 space-y-3">
+        <button
+          onClick={scanning ? stop : start}
+          className={`w-full h-9 flex items-center justify-center gap-2 text-[13px] font-semibold rounded-lg transition-all
+            ${scanning
+              ? 'text-red-400 border border-red-400/25 bg-red-400/10 hover:bg-red-400/20'
+              : 'text-white bg-[#1f6feb] hover:bg-[#1a5fd4]'}`}>
+          {scanning ? <><CameraOff size={14} /> Stop</> : <><Camera size={14} /> Start Scanning</>}
+        </button>
+
+        <p className="text-[11px] text-[#3a404f] text-center">
+          {scanning ? 'Align barcode within the frame — it will scan automatically' : 'Press start to activate the camera'}
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes scanline {
+          0%, 100% { transform: translateY(-80px); opacity: 0; }
+          10%, 90%  { opacity: 1; }
+          50%       { transform: translateY(80px); }
+        }
+      `}</style>
     </div>
   );
 };

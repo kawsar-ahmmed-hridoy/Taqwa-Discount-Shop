@@ -51,11 +51,11 @@ const CustomerDrawer = ({ customer, onClose, onSaved }: { customer: Customer | '
 
   return (
     <Overlay onClose={onClose}>
-      <div className="w-full max-w-md">
+      <div className="w-screen max-w-md">
         <ModalHeader title={isEdit ? `Edit — ${customer.name}` : 'New Customer'} onClose={onClose} />
         <form onSubmit={submit} className="p-6 space-y-4">
           {[
-            { key: 'name',    label: 'Full Name',  type: 'text',  required: true,  placeholder: 'e.g. Rahim Uddin' },
+            { key: 'name',    label: 'Full Name',  type: 'text',  required: true,  placeholder: 'e.g. Hridoy' },
             { key: 'phone',   label: 'Phone',      type: 'tel',   required: true,  placeholder: '01XXXXXXXXX' },
             { key: 'email',   label: 'Email',      type: 'email', required: false, placeholder: 'optional' },
             { key: 'address', label: 'Address',    type: 'text',  required: false, placeholder: 'optional' },
@@ -64,7 +64,7 @@ const CustomerDrawer = ({ customer, onClose, onSaved }: { customer: Customer | '
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">{label}{required && ' *'}</label>
               <input type={type} required={required} placeholder={placeholder} value={(form as any)[key]}
                 onChange={e => set(key, e.target.value)}
-                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+                className="w-full h-9 px-4 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
             </div>
           ))}
           <div className="flex gap-2.5 pt-1">

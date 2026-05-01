@@ -34,4 +34,23 @@ export const updateStaff = async (
   payload: Partial<{ email: string; fullName: string; role: 'OWNER' | 'MANAGER' | 'STAFF'; isActive: boolean }>
 ) => prisma.user.update({ where: { id }, data: payload, select: { id: true, email: true, fullName: true, role: true, isActive: true } });
 
-export const deleteStaff = async (id: number) => prisma.user.delete({ where: { id } });
+export const deleteStaff = async (id: number) => {
+  const [salesCount, expensesCount, purchaseOrderCount, auditLogCount] = await Promise.all([
+    prisma.sale.count({ where: { userId: id } }),
+    prisma.expense.count({ where: { userId: id } }),
+    prisma.purchaseOrder.count({ where: { userId: id } }),
+    prisma.auditLog.count({ where: { userId: id } }),
+  ]);
+
+  const hasHistory = salesCount > 0 || expensesCount > 0 || purchaseOrderCount > 0 || auditLogCount > 0;
+
+  if (hasHistory) {
+    return prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: { id: true, email: true, fullName: true, role: true, isActive: true },
+    });
+  }
+
+  return prisma.user.delete({ where: { id } });
+};
