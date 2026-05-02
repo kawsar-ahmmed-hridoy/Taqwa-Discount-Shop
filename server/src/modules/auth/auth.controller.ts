@@ -24,7 +24,7 @@ export const login = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    const result = await loginService({ email, password });
+    const result = await loginService({ email, password, ipAddress: req.ip });
 
     return res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -52,7 +52,7 @@ export const signup = async (req: Request, res: Response): Promise<any> => {
       });
     }
 
-    const result = await signupService({ email, password, fullName, role });
+    const result = await signupService({ email, password, fullName, role, ipAddress: req.ip });
 
     return res.status(HTTP_STATUS.CREATED).json({
       success: true,
@@ -99,7 +99,7 @@ export const logout = async (req: Request, res: Response): Promise<any> => {
   try {
     const userReq = req as RequestWithUser;
     if (userReq.user?.id) {
-      await logoutService(Number(userReq.user.id));
+      await logoutService(Number(userReq.user.id), userReq.user.role, req.ip);
     }
 
     return res.status(HTTP_STATUS.OK).json({
@@ -138,6 +138,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<any> =
       userId: Number(userReq.user.id),
       currentPassword,
       newPassword,
+      ipAddress: req.ip,
     });
 
     return res.status(HTTP_STATUS.OK).json({

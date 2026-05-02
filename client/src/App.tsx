@@ -12,6 +12,7 @@ import PurchaseOrders from './pages/PurchaseOrders';
 import Expenses from './pages/Expenses';
 import Staff from './pages/Staff';
 import Reports from './pages/Reports';
+import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
 import ProfileInfoPage from './pages/ProfileInfoPage';
 import Refunds from './pages/Refunds';
@@ -46,6 +47,7 @@ function App() {
             <Route path="purchase-orders" element={<PurchaseOrders />} />
             <Route path="expenses" element={<Expenses />} />
             <Route path="staff" element={<Staff />} />
+            <Route path="audit-logs" element={<AuditLogs />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
             <Route path="profile" element={<ProfileInfoPage />} />

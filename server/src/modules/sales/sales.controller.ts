@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { PaymentMode } from '@prisma/client';
 import { RequestWithUser } from '../../types';
+import { recordAuditLog } from '../audit-logs/audit-logs.service';
 import {
   createSale,
   listSales,
@@ -37,6 +38,16 @@ export const postSale = async (req: Request, res: Response): Promise<any> => {
       customerId,
       paymentMode,
       discount,
+    });
+
+    await recordAuditLog({
+      userId: Number(userReq.user.id),
+      actorRole: userReq.user.role,
+      action: 'SALE_COMPLETED',
+      entity: 'SALE',
+      entityId: data.id,
+      details: `${data.invoiceNo} completed for ৳${Number(data.total).toFixed(2)}`,
+      ipAddress: req.ip,
     });
 
     return res.status(201).json({ success: true, data });
@@ -90,6 +101,17 @@ export const requestRefund = async (req: Request, res: Response): Promise<any> =
     }
 
     const refund = await createRefundRequest({ saleId, reason, amount, notes });
+    if (userReq.user) {
+      await recordAuditLog({
+        userId: Number(userReq.user.id),
+        actorRole: userReq.user.role,
+        action: 'REFUND_REQUESTED',
+        entity: 'REFUND',
+        entityId: refund.id,
+        details: `Sale ${saleId} refund requested for ৳${Number(amount).toFixed(2)}`,
+        ipAddress: req.ip,
+      });
+    }
     return res.status(201).json({ success: true, data: refund });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message || 'Failed to create refund request' });
@@ -105,6 +127,15 @@ export const approveRefundRequest = async (req: Request, res: Response): Promise
 
     const { notes } = req.body as { notes?: string };
     const refund = await approveRefund(Number(req.params.id), userReq.user.id, notes);
+    await recordAuditLog({
+      userId: Number(userReq.user.id),
+      actorRole: userReq.user.role,
+      action: 'REFUND_APPROVED',
+      entity: 'REFUND',
+      entityId: refund.id,
+      details: `Refund ${refund.id} approved`,
+      ipAddress: req.ip,
+    });
     return res.json({ success: true, data: refund });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message || 'Failed to approve refund' });
@@ -119,6 +150,18 @@ export const rejectRefundRequest = async (req: Request, res: Response): Promise<
     }
 
     const refund = await rejectRefund(Number(req.params.id), reason);
+    const userReq = req as RequestWithUser;
+    if (userReq.user) {
+      await recordAuditLog({
+        userId: Number(userReq.user.id),
+        actorRole: userReq.user.role,
+        action: 'REFUND_REJECTED',
+        entity: 'REFUND',
+        entityId: refund.id,
+        details: `Refund ${refund.id} rejected`,
+        ipAddress: req.ip,
+      });
+    }
     return res.json({ success: true, data: refund });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message || 'Failed to reject refund' });
@@ -128,6 +171,18 @@ export const rejectRefundRequest = async (req: Request, res: Response): Promise<
 export const processRefundRequest = async (req: Request, res: Response): Promise<any> => {
   try {
     const refund = await processRefund(Number(req.params.id));
+    const userReq = req as RequestWithUser;
+    if (userReq.user) {
+      await recordAuditLog({
+        userId: Number(userReq.user.id),
+        actorRole: userReq.user.role,
+        action: 'REFUND_PROCESSED',
+        entity: 'REFUND',
+        entityId: refund.id,
+        details: `Refund ${refund.id} processed`,
+        ipAddress: req.ip,
+      });
+    }
     return res.json({ success: true, data: refund });
   } catch (error: any) {
     return res.status(400).json({ success: false, message: error.message || 'Failed to process refund' });

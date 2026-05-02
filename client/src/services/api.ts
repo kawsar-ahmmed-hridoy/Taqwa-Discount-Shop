@@ -100,6 +100,10 @@ export const staffAPI = {
   delete: (id: number) => api.delete(`/staff/${id}`),
 };
 
+export const auditLogAPI = {
+  getAll: (params?: unknown) => api.get('/audit-logs', { params }),
+};
+
 export const reportAPI = {
   sales: (params?: unknown) => api.get('/reports/sales', { params }),
   inventory: () => api.get('/reports/inventory'),

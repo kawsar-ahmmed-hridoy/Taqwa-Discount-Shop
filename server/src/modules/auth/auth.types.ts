@@ -1,6 +1,7 @@
 export interface LoginRequest {
   email: string;
   password: string;
+  ipAddress?: string;
 }
 
 export interface SignupRequest {
@@ -8,12 +9,14 @@ export interface SignupRequest {
   password: string;
   fullName: string;
   role?: 'OWNER' | 'MANAGER' | 'STAFF';
+  ipAddress?: string;
 }
 
 export interface ResetPasswordRequest {
   userId: number;
   currentPassword: string;
   newPassword: string;
+  ipAddress?: string;
 }
 
 export interface AuthResponse {

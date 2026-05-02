@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { RequestWithUser } from '../../types';
+import { recordAuditLog } from '../audit-logs/audit-logs.service';
 import {
   listPurchaseOrders,
   createPurchaseOrder,
@@ -36,6 +37,16 @@ export const postPurchaseOrder = async (req: Request, res: Response): Promise<an
       notes,
     });
 
+    await recordAuditLog({
+      userId: Number(userReq.user.id),
+      actorRole: userReq.user.role,
+      action: 'PURCHASE_ORDER_CREATED',
+      entity: 'PURCHASE_ORDER',
+      entityId: data.id,
+      details: `${data.orderNo} created for ${data.supplier?.name ?? 'supplier'}`,
+      ipAddress: req.ip,
+    });
+
     return res.status(201).json({ success: true, data });
   } catch {
     return res.status(500).json({ success: false, message: 'Failed to create purchase order' });
@@ -45,6 +56,18 @@ export const postPurchaseOrder = async (req: Request, res: Response): Promise<an
 export const putPurchaseOrderStatus = async (req: Request, res: Response): Promise<any> => {
   try {
     const data = await updatePurchaseOrderStatus(Number(req.params.id), req.body);
+    const userReq = req as RequestWithUser;
+    if (userReq.user) {
+      await recordAuditLog({
+        userId: Number(userReq.user.id),
+        actorRole: userReq.user.role,
+        action: 'PURCHASE_ORDER_STATUS_UPDATED',
+        entity: 'PURCHASE_ORDER',
+        entityId: data.id,
+        details: `${data.orderNo} moved to ${data.status}`,
+        ipAddress: req.ip,
+      });
+    }
     return res.json({ success: true, data });
   } catch {
     return res.status(500).json({ success: false, message: 'Failed to update order status' });

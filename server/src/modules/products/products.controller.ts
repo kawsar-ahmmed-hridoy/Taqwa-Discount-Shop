@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { RequestWithUser } from '../../types';
 import {
   listProducts,
   getProduct,
@@ -10,6 +11,7 @@ import {
   searchProducts,
   listCategories,
 } from './products.service';
+import { recordAuditLog } from '../audit-logs/audit-logs.service';
 
 export const getProducts = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -36,6 +38,18 @@ export const getProductById = async (req: Request, res: Response): Promise<any> 
 export const postProduct = async (req: Request, res: Response): Promise<any> => {
   try {
     const product = await createProduct(req.body);
+    const actor = (req as RequestWithUser).user;
+    if (actor) {
+      await recordAuditLog({
+        userId: Number(actor.id),
+        actorRole: actor.role,
+        action: 'PRODUCT_CREATED',
+        entity: 'PRODUCT',
+        entityId: product.id,
+        details: `${product.name} (${product.sku}) created`,
+        ipAddress: req.ip,
+      });
+    }
     return res.status(201).json({ success: true, data: product });
   } catch (error: any) {
     if (error?.code === 'P2002') {
@@ -48,6 +62,18 @@ export const postProduct = async (req: Request, res: Response): Promise<any> => 
 export const putProduct = async (req: Request, res: Response): Promise<any> => {
   try {
     const product = await updateProduct(Number(req.params.id), req.body);
+    const actor = (req as RequestWithUser).user;
+    if (actor) {
+      await recordAuditLog({
+        userId: Number(actor.id),
+        actorRole: actor.role,
+        action: 'PRODUCT_UPDATED',
+        entity: 'PRODUCT',
+        entityId: product.id,
+        details: `${product.name} (${product.sku}) updated`,
+        ipAddress: req.ip,
+      });
+    }
     return res.json({ success: true, data: product });
   } catch (error: any) {
     if (error?.code === 'P2025') {
@@ -59,7 +85,19 @@ export const putProduct = async (req: Request, res: Response): Promise<any> => {
 
 export const deleteProduct = async (req: Request, res: Response): Promise<any> => {
   try {
-    await removeProduct(Number(req.params.id));
+    const product = await removeProduct(Number(req.params.id));
+    const actor = (req as RequestWithUser).user;
+    if (actor) {
+      await recordAuditLog({
+        userId: Number(actor.id),
+        actorRole: actor.role,
+        action: 'PRODUCT_DELETED',
+        entity: 'PRODUCT',
+        entityId: product.id,
+        details: `${product.name} (${product.sku}) deleted`,
+        ipAddress: req.ip,
+      });
+    }
     return res.json({ success: true, message: 'Product deleted successfully' });
   } catch (error: any) {
     if (error?.code === 'P2025') {

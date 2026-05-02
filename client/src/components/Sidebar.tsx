@@ -10,6 +10,7 @@ import {
   Receipt,
   UserCog,
   BarChart3,
+  ShieldAlert,
   Settings,
   LogOut,
   ChevronLeft,
@@ -53,6 +54,7 @@ const menuSections = [
     label: 'Admin',
     items: [
       { path: '/staff', label: 'Staff', icon: UserCog, roles: ['OWNER', 'MANAGER'] },
+      { path: '/audit-logs', label: 'Audit Logs', icon: ShieldAlert, roles: ['OWNER', 'MANAGER'] },
       { path: '/settings', label: 'Settings', icon: Settings, roles: ['OWNER'] },
     ],
   },

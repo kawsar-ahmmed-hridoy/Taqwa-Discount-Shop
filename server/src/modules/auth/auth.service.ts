@@ -2,6 +2,7 @@ import { getPrismaClient } from '../../config';
 import { hashPassword, comparePassword, generateToken } from '../../utils';
 import { AuthError, ConflictError, NotFoundError } from '../../errors';
 import { LoginRequest, SignupRequest, AuthResponse, ResetPasswordRequest } from './auth.types';
+import { recordAuditLog } from '../audit-logs/audit-logs.service';
 
 const prisma = getPrismaClient();
 
@@ -28,7 +29,7 @@ const toAuthResponse = (user: {
 
 
 export const loginService = async (request: LoginRequest): Promise<AuthResponse> => {
-  const { email, password } = request;
+  const { email, password, ipAddress } = request;
 
   const user = await prisma.user.findUnique({
     where: { email },
@@ -44,14 +45,14 @@ export const loginService = async (request: LoginRequest): Promise<AuthResponse>
     throw new AuthError('Invalid email or password');
   }
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      action: 'LOGIN',
-      entity: 'USER',
-      entityId: user.id,
-      details: 'User logged in successfully',
-    },
+  await recordAuditLog({
+    userId: user.id,
+    actorRole: user.role,
+    action: 'LOGIN',
+    entity: 'USER',
+    entityId: user.id,
+    details: 'User logged in successfully',
+    ipAddress,
   });
 
   return toAuthResponse({
@@ -65,7 +66,7 @@ export const loginService = async (request: LoginRequest): Promise<AuthResponse>
 
 
 export const signupService = async (request: SignupRequest): Promise<AuthResponse> => {
-  const { email, password, fullName, role = 'STAFF' } = request;
+  const { email, password, fullName, role = 'STAFF', ipAddress } = request;
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -87,14 +88,14 @@ export const signupService = async (request: SignupRequest): Promise<AuthRespons
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      action: 'SIGNUP',
-      entity: 'USER',
-      entityId: user.id,
-      details: 'User account created',
-    },
+  await recordAuditLog({
+    userId: user.id,
+    actorRole: user.role,
+    action: 'SIGNUP',
+    entity: 'USER',
+    entityId: user.id,
+    details: `User account created as ${user.role}`,
+    ipAddress,
   });
 
   return toAuthResponse({
@@ -129,7 +130,7 @@ export const getCurrentUserService = async (userId: number) => {
 
 
 export const resetPasswordService = async (request: ResetPasswordRequest): Promise<void> => {
-  const { userId, currentPassword, newPassword } = request;
+  const { userId, currentPassword, newPassword, ipAddress } = request;
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user) {
@@ -147,26 +148,26 @@ export const resetPasswordService = async (request: ResetPasswordRequest): Promi
     data: { password: passwordHash },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      userId,
-      action: 'PASSWORD_RESET',
-      entity: 'USER',
-      entityId: userId,
-      details: 'Password changed successfully',
-    },
+  await recordAuditLog({
+    userId,
+    actorRole: user.role,
+    action: 'PASSWORD_RESET',
+    entity: 'USER',
+    entityId: userId,
+    details: 'Password changed successfully',
+    ipAddress,
   });
 };
 
 
-export const logoutService = async (userId: number): Promise<void> => {
-  await prisma.auditLog.create({
-    data: {
-      userId,
-      action: 'LOGOUT',
-      entity: 'USER',
-      entityId: userId,
-      details: 'User logged out',
-    },
+export const logoutService = async (userId: number, actorRole?: 'OWNER' | 'MANAGER' | 'STAFF', ipAddress?: string): Promise<void> => {
+  await recordAuditLog({
+    userId,
+    actorRole,
+    action: 'LOGOUT',
+    entity: 'USER',
+    entityId: userId,
+    details: 'User logged out',
+    ipAddress,
   });
 };

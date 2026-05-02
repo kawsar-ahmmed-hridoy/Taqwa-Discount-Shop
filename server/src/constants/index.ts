@@ -60,6 +60,7 @@ export const API_ROUTES = {
   PURCHASE_ORDERS: '/api/purchase-orders',
   EXPENSES: '/api/expenses',
   STAFF: '/api/staff',
+  AUDIT_LOGS: '/api/audit-logs',
   REPORTS: '/api/reports',
   DASHBOARD: '/api/dashboard',
   NOTIFICATIONS: '/api/notifications',

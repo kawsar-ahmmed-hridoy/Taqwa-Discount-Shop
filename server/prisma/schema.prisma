@@ -259,6 +259,7 @@ type       String
 model AuditLog {
   id        Int      @id @default(autoincrement())
   userId    Int
+  actorRole UserRole?
   action    String
   entity    String
 entityId  Int?
@@ -268,6 +269,7 @@ entityId  Int?
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
+  @@index([actorRole])
   @@index([createdAt])
   @@map("audit_logs")
 }
