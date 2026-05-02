@@ -1,6 +1,6 @@
 # Taqwa - Discount Shop POS System
 
-A comprehensive, enterprise-grade Point of Sale (POS) system designed for discount retail shops with multi-role access control, real-time inventory management, billing automation, and advanced analytics.
+A comprehensive, enterprise-grade Point of Sale (POS) system designed for discount retail shops with multi-role access control, real-time inventory management, billing automation, audit logging, and advanced analytics.
 
 ---
 
@@ -53,6 +53,12 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - **Bulk Purchasing**: Handle large quantity purchases efficiently
 - **Supplier Analytics**: View supplier performance metrics
 
+### Refund Management
+- **Refund Requests**: Review refund requests raised from sales history
+- **Approval Workflow**: Approve, reject, or process refunds with status tracking
+- **Refund Details**: Inspect sale context, customer data, items, and timestamps
+- **Operational Controls**: Keep refund handling aligned with OWNER and MANAGER permissions
+
 ### Customer Management
 - **Customer Profiles**: Store customer contact information and preferences
 - **Purchase History**: View all transactions per customer
@@ -66,6 +72,11 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - **Expense Categories**: Organize expenses by type
 - **Budget Tracking**: Monitor spending against budget limits
 - **Audit Trail**: Complete history of all expense modifications
+
+### Audit Trail & Governance
+- **Role-Based Audit Logs**: Track sensitive changes across users, products, sales, refunds, expenses, purchase orders, and settings
+- **Actor Metadata**: Store actor role, IP address, entity, and change details for review
+- **Restricted Access**: Audit history is available only to OWNER and MANAGER roles
 
 ### Analytics & Reporting
 - **Sales Reports**: Daily, weekly, monthly sales analysis with charts
@@ -152,11 +163,13 @@ Taqwa/
 │   │   │   ├── Dashboard.tsx        # Analytics dashboard
 │   │   │   ├── Products.tsx         # Product management
 │   │   │   ├── Sales.tsx            # POS and billing
+│   │   │   ├── Refunds.tsx          # Refund management
 │   │   │   ├── Customers.tsx        # Customer management
 │   │   │   ├── Suppliers.tsx        # Supplier management
 │   │   │   ├── PurchaseOrders.tsx   # Purchase order management
 │   │   │   ├── Expenses.tsx         # Expense tracking
 │   │   │   ├── Staff.tsx            # Staff management
+│   │   │   ├── AuditLogs.tsx        # Audit trail viewer
 │   │   │   ├── Reports.tsx          # Report generation
 │   │   │   ├── Settings.tsx         # Application settings
 │   │   │   ├── Login.tsx            # Authentication page
@@ -378,8 +391,8 @@ cd server
 # Generate Prisma client
 npm run prisma:generate
 
-# Push schema to database (creates tables)
-npm run prisma:push
+# Apply Prisma migrations to the database
+npx prisma migrate deploy
 
 # Seed database with sample data (optional)
 npm run seed
@@ -465,6 +478,15 @@ Authorization: Bearer <token>
 | GET | `/sales/:id` | Get sale by ID |
 | POST | `/sales` | Create new sale/bill |
 | PUT | `/sales/:id` | Update sale status |
+
+### Refund Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/refunds` | View refund requests in the UI |
+| PUT | `/sales/refund/:id/approve` | Approve a refund |
+| PUT | `/sales/refund/:id/reject` | Reject a refund |
+| PUT | `/sales/refund/:id/process` | Mark an approved refund as processed |
 
 ### Customer Endpoints
 
@@ -567,6 +589,7 @@ Authorization: Bearer <token>
 - Financial reports
 - System settings
 - Approval authority
+- Audit log access
 
 #### MANAGER
 - Product & inventory management
@@ -575,6 +598,7 @@ Authorization: Bearer <token>
 - Supplier management
 - Report generation
 - Expense approval
+- Audit log access
 
 #### STAFF
 - POS access (sales)
@@ -640,7 +664,9 @@ git push origin feature/feature-name
 ### Database Connection Error
 1. Run Prisma setup:
    ```bash
-   npm run prisma:push
+   cd server
+   npm run prisma:generate
+   npx prisma migrate deploy
    ```
 2. Verify credentials in `DATABASE_URL`
 3. Ensure MySQL service is running
@@ -669,294 +695,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 ## 📞 Support
-
-For issues and questions, please create an issue in the repository.
-
-### 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd pos-system
-```
-
-### 2. Setup Server
-
-```bash
-cd server
-npm install
-```
-
-Create `.env` file in server directory:
-
-```env
-# Option A - MySQL (production-like)
-DATABASE_URL="mysql://root:password@localhost:3306/takowa_discount_shop"
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-JWT_EXPIRES_IN="24h"
-PORT=5000
-NODE_ENV=development
-
-# Option B - SQLite (quick local dev - already configured in prisma/schema.prisma)
-# If you prefer SQLite for local development, ensure `server/prisma/dev.db` exists (it is checked into this repo).
-# You can keep the same `.env` but Prisma will use the datasource defined in `prisma/schema.prisma`.
-```
-
-Setup database:
-
-```bash
-npx prisma generate
-npx prisma db push            # pushes Prisma schema to configured datasource (SQLite by default)
-npm run seed                  # seeds initial users, products, suppliers, settings
-```
-
-Start server:
-
-```bash
-npm run dev
-```
-
-### 3. Setup Client
-
-```bash
-cd client
-npm install
-```
-
-Create `.env` file in client directory:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-Start client:
-
-```bash
-npm run dev
-```
-
-## Default Login Credentials
-
-After running the seed script:
-
-**Owner:**
-- Email: 
-- Password: 
-
-**Manager:**
-- Email: 
-- Password: 
-
-**Staff:**
-- Email: 
-- Password: 
-
-## Project Structure
-
-```
-pos-system/
-├── README.md
-│
-├── client/                           # Frontend React application
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Layout.tsx           # Main layout with sidebar
-│   │   │   ├── ProductModal.tsx     # Product create/edit modal
-│   │   │   └── BarcodeScanner.tsx   # Barcode scanning component
-│   │   ├── pages/
-│   │   │   ├── Login.tsx            # Login page
-│   │   │   ├── signup.tsx           # signup page
-│   │   │   ├── Dashboard.tsx        # Dashboard with stats
-│   │   │   ├── Products.tsx         # Product management
-│   │   │   ├── Sales.tsx            # POS billing interface
-│   │   │   ├── Customers.tsx        # Customer management
-│   │   │   ├── Suppliers.tsx        # Supplier management
-│   │   │   ├── PurchaseOrders.tsx   # Purchase order tracking
-│   │   │   ├── Expenses.tsx         # Expense tracking
-│   │   │   ├── Staff.tsx            # Staff management
-│   │   │   ├── Reports.tsx          # Reports & analytics
-│   │   │   └── Settings.tsx         # System settings
-│   │   ├── store/
-│   │   │   └── authStore.ts         # Zustand auth state
-│   │   ├── services/
-│   │   │   └── api.ts               # API service layer
-│   │   ├── App.tsx                  # Main app with routing
-│   │   ├── main.tsx                 # Entry point
-│   │   └── index.css                # Global styles
-│   ├── index.html
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   ├── tailwind.config.js
-│   ├── package.json
-│   └── .env.example
-│
-└── server/                           # Backend Node.js application
-    ├── src/
-    │   ├── controllers/
-    │   │   ├── auth.controller.ts
-    │   │   ├── product.controller.ts
-    │   │   ├── sale.controller.ts
-    │   │   ├── customer.controller.ts
-    │   │   ├── supplier.controller.ts
-    │   │   ├── purchaseOrder.controller.ts
-    │   │   ├── expense.controller.ts
-    │   │   ├── staff.controller.ts
-    │   │   ├── report.controller.ts
-    │   │   ├── dashboard.controller.ts
-    │   │   ├── notification.controller.ts
-    │   │   └── settings.controller.ts
-    │   ├── middleware/
-    │   │   └── auth.middleware.ts     # JWT authentication
-    │   ├── routes/
-    │   │   ├── auth.routes.ts
-    │   │   ├── product.routes.ts
-    │   │   ├── sale.routes.ts
-    │   │   ├── customer.routes.ts
-    │   │   ├── supplier.routes.ts
-    │   │   ├── purchaseOrder.routes.ts
-    │   │   ├── expense.routes.ts
-    │   │   ├── staff.routes.ts
-    │   │   ├── report.routes.ts
-    │   │   ├── dashboard.routes.ts
-    │   │   ├── notification.routes.ts
-    │   │   └── settings.routes.ts
-    │   └── server.ts                  # Express server entry
-    ├── prisma/
-    │   ├── schema.prisma              # Prisma database schema
-    │   └── seed.ts                    # Database seeding script
-    ├── tsconfig.json
-    ├── package.json
-    └── .env
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/reset-password` - Password reset
-
-### Products
-- `GET /api/products` - Get all products
-- `GET /api/products/:id` - Get product by ID
-- `POST /api/products` - Create product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
-- `POST /api/products/bulk-upload` - Bulk upload via CSV
-
-### Sales
-- `POST /api/sales` - Create sale
-- `GET /api/sales` - Get all sales
-- `GET /api/sales/:id` - Get sale by ID
-- `GET /api/sales/invoice/:id` - Get invoice
-
-### Customers
-- `GET /api/customers` - Get all customers
-- `POST /api/customers` - Create customer
-- `PUT /api/customers/:id` - Update customer
-- `GET /api/customers/:id/history` - Purchase history
-
-### Suppliers & Purchase Orders
-- `GET /api/suppliers` - Get all suppliers
-- `POST /api/suppliers` - Create supplier
-- `GET /api/purchase-orders` - Get all orders
-- `POST /api/purchase-orders` - Create order
-
-### Expenses
-- `GET /api/expenses` - Get all expenses
-- `POST /api/expenses` - Create expense
-- `PUT /api/expenses/:id/approve` - Approve expense
-
-### Staff
-- `GET /api/staff` - Get all staff
-- `POST /api/staff` - Create staff member
-- `PUT /api/staff/:id` - Update staff
-
-### Reports
-- `GET /api/reports/sales` - Sales report
-- `GET /api/reports/inventory` - Inventory report
-- `GET /api/reports/expenses` - Expense report
-
-## Security Features
-
-- JWT-based authentication
-- Password hashing with bcrypt
-- Role-based access control (RBAC)
-- SQL injection prevention via Prisma ORM
-- CORS configuration
-- Input validation
-- Secure HTTP headers
-
-## Database Schema
-
-The system uses MySQL with Prisma ORM. Key tables:
-
-- Users (staff, manager, owner)
-- Products
-- Categories
-- Suppliers
-- Customers
-- Sales & SaleItems
-- PurchaseOrders & PurchaseOrderItems
-- Expenses
-- AuditLogs
-- Notifications
-
-## Development
-
-### Running Tests
-
-```bash
-# Server tests
-cd server
-npm test
-
-# Client tests
-cd client
-npm test
-```
-
-### Building for Production
-
-```bash
-# Build client
-cd client
-npm run build
-
-# Build server
-cd server
-npm run build
-```
-
-## Deployment
-
-1. Set up MySQL database on production server
-2. Update environment variables
-3. Build both client and server
-4. Deploy server to Node.js hosting (e.g., Railway, Render)
-5. Deploy client to static hosting (e.g., Vercel, Netlify)
-6. Configure HTTPS
-7. Set up automated backups
-
-## Troubleshooting
-
-### Database Connection Issues
-- Verify MySQL is running
-- Check DATABASE_URL in .env
-- Ensure database exists
-
-### Port Conflicts
-- Change PORT in server .env
-- Update VITE_API_URL in client .env
-
-### Build Errors
-- Clear node_modules and reinstall
-- Check Node.js version compatibility
-- Verify all environment variables are set
-
-## License
-
-MIT
-
-## Support
 
 For issues and questions, please create an issue in the repository.
