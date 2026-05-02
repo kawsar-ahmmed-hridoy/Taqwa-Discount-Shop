@@ -14,6 +14,7 @@ import Staff from './pages/Staff';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import ProfileInfoPage from './pages/ProfileInfoPage';
+import Refunds from './pages/Refunds';
 import Layout from './components/Layout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -39,6 +40,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="products" element={<Products />} />
             <Route path="sales" element={<Sales />} />
+            <Route path="refunds" element={<Refunds />} />
             <Route path="customers" element={<Customers />} />
             <Route path="suppliers" element={<Suppliers />} />
             <Route path="purchase-orders" element={<PurchaseOrders />} />

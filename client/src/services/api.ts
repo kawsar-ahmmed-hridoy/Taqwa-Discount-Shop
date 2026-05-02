@@ -59,6 +59,12 @@ export const saleAPI = {
   getAll: (params?: unknown) => api.get('/sales', { params }),
   getById: (id: number) => api.get(`/sales/${id}`),
   getInvoice: (id: number) => api.get(`/sales/invoice/${id}`),
+  requestRefund: (data: unknown) => api.post('/sales/refund/request', data),
+  getRefund: (id: number) => api.get(`/sales/refund/${id}`),
+  getSaleRefunds: (saleId: number) => api.get(`/sales/${saleId}/refunds`),
+  approveRefund: (refundId: number, data?: unknown) => api.put(`/sales/refund/${refundId}/approve`, data),
+  rejectRefund: (refundId: number, data: unknown) => api.put(`/sales/refund/${refundId}/reject`, data),
+  processRefund: (refundId: number) => api.put(`/sales/refund/${refundId}/process`),
 };
 
 export const customerAPI = {

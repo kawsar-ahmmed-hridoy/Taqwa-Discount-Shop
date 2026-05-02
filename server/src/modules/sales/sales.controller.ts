@@ -1,7 +1,17 @@
 import { Request, Response } from 'express';
 import { PaymentMode } from '@prisma/client';
 import { RequestWithUser } from '../../types';
-import { createSale, listSales, getSale } from './sales.service';
+import {
+  createSale,
+  listSales,
+  getSale,
+  createRefundRequest,
+  approveRefund,
+  rejectRefund,
+  processRefund,
+  getSaleRefunds,
+  getRefund,
+} from './sales.service';
 
 export const postSale = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -63,4 +73,84 @@ export const getInvoice = async (req: Request, res: Response): Promise<any> => {
     return res.status(404).json({ success: false, message: 'Invoice not found' });
   }
   return res.json({ success: true, data: sale });
+};
+
+export const requestRefund = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userReq = req as RequestWithUser;
+    const { saleId, reason, amount, notes } = req.body as {
+      saleId: number;
+      reason: string;
+      amount: number;
+      notes?: string;
+    };
+
+    if (!saleId || !reason || !amount) {
+      return res.status(400).json({ success: false, message: 'saleId, reason, and amount are required' });
+    }
+
+    const refund = await createRefundRequest({ saleId, reason, amount, notes });
+    return res.status(201).json({ success: true, data: refund });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to create refund request' });
+  }
+};
+
+export const approveRefundRequest = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userReq = req as RequestWithUser;
+    if (!userReq.user?.id) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { notes } = req.body as { notes?: string };
+    const refund = await approveRefund(Number(req.params.id), userReq.user.id, notes);
+    return res.json({ success: true, data: refund });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to approve refund' });
+  }
+};
+
+export const rejectRefundRequest = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { reason } = req.body as { reason?: string };
+    if (!reason) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+    }
+
+    const refund = await rejectRefund(Number(req.params.id), reason);
+    return res.json({ success: true, data: refund });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to reject refund' });
+  }
+};
+
+export const processRefundRequest = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const refund = await processRefund(Number(req.params.id));
+    return res.json({ success: true, data: refund });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to process refund' });
+  }
+};
+
+export const getRefundDetails = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const refund = await getRefund(Number(req.params.id));
+    if (!refund) {
+      return res.status(404).json({ success: false, message: 'Refund not found' });
+    }
+    return res.json({ success: true, data: refund });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to fetch refund details' });
+  }
+};
+
+export const listSaleRefunds = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const refunds = await getSaleRefunds(Number(req.params.saleId));
+    return res.json({ success: true, data: refunds });
+  } catch (error: any) {
+    return res.status(400).json({ success: false, message: error.message || 'Failed to fetch refunds' });
+  }
 };

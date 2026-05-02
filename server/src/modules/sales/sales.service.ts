@@ -1,4 +1,4 @@
-import { PaymentMode } from '@prisma/client';
+import { PaymentMode, SaleStatus, RefundStatus } from '@prisma/client';
 import { getPrismaClient } from '../../config';
 
 const prisma = getPrismaClient();
@@ -69,11 +69,14 @@ export const createSale = async (payload: {
         vat,
         total,
         paymentMode: payload.paymentMode,
+        status: SaleStatus.COMPLETED,
         items: { create: saleItems },
       },
       include: {
         customer: true,
+        user: { select: { id: true, fullName: true, email: true } },
         items: { include: { product: true } },
+        refunds: true,
       },
     });
 
@@ -112,6 +115,7 @@ export const listSales = async (query: {
         customer: true,
         user: { select: { id: true, fullName: true, email: true } },
         items: { include: { product: true } },
+        refunds: true,
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -139,5 +143,163 @@ export const getSale = async (id: number) =>
       customer: true,
       user: { select: { id: true, fullName: true, email: true } },
       items: { include: { product: true } },
+      refunds: true,
     },
 });
+
+export const createRefundRequest = async (payload: {
+  saleId: number;
+  reason: string;
+  amount: number;
+  notes?: string;
+}) => {
+  const sale = await prisma.sale.findUnique({ where: { id: payload.saleId } });
+  if (!sale) {
+    throw new Error('Sale not found');
+  }
+
+  if (payload.amount > sale.total) {
+    throw new Error('Refund amount cannot exceed sale total');
+  }
+
+  if (payload.amount <= 0) {
+    throw new Error('Refund amount must be greater than 0');
+  }
+
+  const refund = await prisma.refund.create({
+    data: {
+      saleId: payload.saleId,
+      reason: payload.reason,
+      amount: payload.amount,
+      notes: payload.notes,
+      status: RefundStatus.PENDING,
+    },
+    include: {
+      sale: { include: { customer: true, user: true } },
+    },
+  });
+
+  return refund;
+};
+
+export const approveRefund = async (refundId: number, approvedBy: number, notes?: string) => {
+  const refund = await prisma.refund.findUnique({ where: { id: refundId } });
+  if (!refund) {
+    throw new Error('Refund not found');
+  }
+
+  if (refund.status !== RefundStatus.PENDING) {
+    throw new Error(`Cannot approve a refund with status: ${refund.status}`);
+  }
+
+  const updatedRefund = await prisma.refund.update({
+    where: { id: refundId },
+    data: {
+      status: RefundStatus.APPROVED,
+      approvedBy,
+      notes: notes ?? refund.notes,
+      updatedAt: new Date(),
+    },
+    include: {
+      sale: { include: { customer: true, user: true } },
+      approver: { select: { id: true, fullName: true, email: true } },
+    },
+  });
+
+  return updatedRefund;
+};
+
+export const rejectRefund = async (refundId: number, reason: string) => {
+  const refund = await prisma.refund.findUnique({ where: { id: refundId } });
+  if (!refund) {
+    throw new Error('Refund not found');
+  }
+
+  if (refund.status !== RefundStatus.PENDING) {
+    throw new Error(`Cannot reject a refund with status: ${refund.status}`);
+  }
+
+  const updatedRefund = await prisma.refund.update({
+    where: { id: refundId },
+    data: {
+      status: RefundStatus.REJECTED,
+      notes: reason,
+      updatedAt: new Date(),
+    },
+    include: {
+      sale: { include: { customer: true, user: true } },
+    },
+  });
+
+  return updatedRefund;
+};
+
+export const processRefund = async (refundId: number) => {
+  const refund = await prisma.refund.findUnique({
+    where: { id: refundId },
+    include: { sale: true },
+  });
+
+  if (!refund) {
+    throw new Error('Refund not found');
+  }
+
+  if (refund.status !== RefundStatus.APPROVED) {
+    throw new Error('Only approved refunds can be processed');
+  }
+
+  const updatedRefund = await prisma.$transaction(async (tx) => {
+    // Update refund status to PROCESSED
+    const processed = await tx.refund.update({
+      where: { id: refundId },
+      data: {
+        status: RefundStatus.PROCESSED,
+        processedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Update sale status to REFUNDED
+    await tx.sale.update({
+      where: { id: refund.saleId },
+      data: { status: SaleStatus.REFUNDED, updatedAt: new Date() },
+    });
+
+    // Restore stock for all items in the sale
+    const saleItems = await tx.saleItem.findMany({
+      where: { saleId: refund.saleId },
+    });
+
+    for (const item of saleItems) {
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stockQuantity: { increment: item.quantity } },
+      });
+    }
+
+    return processed;
+  });
+
+  return updatedRefund;
+};
+
+export const getSaleRefunds = async (saleId: number) => {
+  const refunds = await prisma.refund.findMany({
+    where: { saleId },
+    include: {
+      approver: { select: { id: true, fullName: true, email: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return refunds;
+};
+
+export const getRefund = async (id: number) =>
+  prisma.refund.findUnique({
+    where: { id },
+    include: {
+      sale: { include: { customer: true, user: true, items: { include: { product: true } } } },
+      approver: { select: { id: true, fullName: true, email: true } },
+    },
+  });

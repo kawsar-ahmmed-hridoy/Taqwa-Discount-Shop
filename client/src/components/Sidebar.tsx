@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronLeft,
   Store,
+  RotateCcw,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,6 +36,7 @@ const menuSections = [
     label: 'Commerce',
     items: [
       { path: '/sales', label: 'Sales / POS', icon: ShoppingCart, roles: ['OWNER', 'MANAGER', 'STAFF'] },
+      { path: '/refunds', label: 'Refunds', icon: RotateCcw, roles: ['OWNER', 'MANAGER'] },
       { path: '/purchase-orders', label: 'Purchase Orders', icon: ShoppingBag, roles: ['OWNER', 'MANAGER'] },
       { path: '/products', label: 'Products', icon: Package, roles: ['OWNER', 'MANAGER', 'STAFF'] },
       { path: '/suppliers', label: 'Suppliers', icon: Truck, roles: ['OWNER', 'MANAGER'] },

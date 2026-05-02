@@ -31,6 +31,19 @@ enum ExpenseStatus {
   REJECTED
 }
 
+enum SaleStatus {
+  COMPLETED
+  REFUNDED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   email         String         @unique
@@ -44,6 +57,7 @@ model User {
   expenses      Expense[]
   auditLogs     AuditLog[]
   purchaseOrders PurchaseOrder[]
+  refundsApproved Refund[]      @relation("RefundApprover")
 
   @@index([email])
   @@map("users")
@@ -109,14 +123,18 @@ model Sale {
   vat           Float
   total         Float
   paymentMode   PaymentMode
+  status        SaleStatus  @default(COMPLETED)
   createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   customer      Customer?   @relation(fields: [customerId], references: [id])
   user          User        @relation(fields: [userId], references: [id])
   items         SaleItem[]
+  refunds       Refund[]
 
   @@index([invoiceNo])
   @@index([customerId])
   @@index([userId])
+  @@index([status])
   @@index([createdAt])
   @@map("sales")
 }
@@ -135,6 +153,26 @@ model SaleItem {
   @@index([saleId])
   @@index([productId])
   @@map("sale_items")
+}
+
+model Refund {
+  id           Int            @id @default(autoincrement())
+  saleId       Int
+  reason       String
+  amount       Float
+  status       RefundStatus   @default(PENDING)
+  approvedBy   Int?
+  processedAt  DateTime?
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  sale         Sale           @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  approver     User?          @relation("RefundApprover", fields: [approvedBy], references: [id])
+
+  @@index([saleId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("refunds")
 }
 
 model Supplier {

@@ -356,6 +356,10 @@
   }
 
   .print-only {
+    display: none;
+  }
+
+  .print-only {
     display: block !important;
   }
 
