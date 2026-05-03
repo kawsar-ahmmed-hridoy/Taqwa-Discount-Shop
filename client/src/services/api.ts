@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// Support environments where ImportMetaEnv isn't typed by falling back to any
+const API_URL = (import.meta as any).env?.VITE_API_URL || 'https://taqwa-discount-shop.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
