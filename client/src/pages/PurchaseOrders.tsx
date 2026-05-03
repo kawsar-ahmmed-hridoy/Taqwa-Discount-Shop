@@ -273,7 +273,7 @@ const PurchaseOrders = () => {
         <div className="flex flex-col items-center justify-center h-52 border border-white/[0.055] rounded-xl bg-white/[0.02] gap-3">
           <Receipt size={26} className="text-[#3a404f]" />
           <p className="text-[13px] text-[#3a404f]">{search || filter !== 'all' ? 'No matching orders' : 'No orders yet'}</p>
-          {!search && filter === 'all' && <button onClick={() => setShowModal(true)} className="text-[12.5px] text-[#6ea8fe] hover:underline">Create one</button>}
+          {!search && filter === 'all' && <button onClick={() => setShowModal(true)} className="text-[12.5px] text-white border border-[#1f6feb] bg-[#1f6feb] hover:bg-[#488df5] rounded-md px-3 py-1">Create one</button>}
         </div>
       ) : (
         <div className="border border-white/[0.055] rounded-xl overflow-hidden">

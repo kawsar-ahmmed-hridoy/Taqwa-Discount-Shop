@@ -853,7 +853,9 @@ export default function Reports() {
             <FileText size={18} className="text-[#3a404f]" />
           </div>
           <p className="text-[13px] text-[#3a404f]">No report data available</p>
-          <button onClick={fetchReport} className="text-[12px] text-[#6ea8fe] hover:underline">Try again</button>
+          <button onClick={fetchReport} className="text-[12.5px] text-white border border-[#1f6feb] bg-[#1f6feb] hover:bg-[#488df5] rounded-md px-3 py-1">
+            Try again
+          </button>
         </div>
       )}
     </div>

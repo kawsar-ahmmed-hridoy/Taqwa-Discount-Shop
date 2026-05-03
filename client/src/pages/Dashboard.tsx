@@ -270,7 +270,7 @@ const Dashboard = () => {
               <p className="text-[12px] text-[#3c4252]">No sales yet today</p>
               <button
                 onClick={() => navigate('/sales')}
-                className="mt-1 flex items-center gap-1.5 text-[11.5px] font-medium text-[#6ea8fe] hover:text-[#93c5fd] transition-colors"
+                className="flex items-center gap-0.5 border border-[#1f6feb] px-2.5 py-1 rounded-md bg-[#1f6feb] text-[11px] font-medium text-white hover:bg-[#488df5] transition-colors duration-[120ms]"
               >
                 Start a new sale <ArrowUpRight size={11} />
               </button>

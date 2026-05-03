@@ -149,7 +149,7 @@ const Suppliers = () => {
         <div className="flex flex-col items-center justify-center h-52 border border-white/[0.055] rounded-xl bg-white/[0.02] gap-3">
           <Building2 size={26} className="text-[#3a404f]" />
           <p className="text-[13px] text-[#3a404f]">{search ? 'No matching suppliers' : 'No suppliers yet'}</p>
-          {!search && <button onClick={() => setModal('new')} className="text-[12.5px] text-[#6ea8fe] hover:underline">Add one</button>}
+          {!search && <button onClick={() => setModal('new')} className="text-[12.5px] text-white border border-[#1f6feb] bg-[#1f6feb] hover:bg-[#488df5] rounded-md px-3 py-1">Add one</button>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
