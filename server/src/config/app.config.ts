@@ -17,7 +17,7 @@ export interface AppConfig {
 export const loadConfig = (): AppConfig => {
   const nodeEnv = (process.env.NODE_ENV || 'development') as AppConfig['NODE_ENV'];
   const port = Number(process.env.PORT) || 5000;
-  const host = process.env.HOST || 'localhost';
+  const host = process.env.HOST || '0.0.0.0';
   const apiPrefix = process.env.API_PREFIX || '/api';
   const logLevel = process.env.LOG_LEVEL || 'info';
   const corsOrigin = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
