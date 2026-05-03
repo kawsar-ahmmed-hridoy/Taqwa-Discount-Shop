@@ -688,7 +688,7 @@ export default function Reports() {
                   : reportData.sales?.slice(0, 10).map((sale: any) => (
                     <div key={sale.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-default">
                       <div>
-                        <p className="text-[12.5px] font-medium text-[#e2e5eb]">{sale.invoiceNo}</p>
+                        <p className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{sale.invoiceNo}</p>
                         <p className="text-[11px] text-[#3a404f]">{new Date(sale.createdAt).toLocaleDateString()} · {sale.customer?.name || 'Walk-in'}</p>
                       </div>
                       <div className="text-right">
@@ -703,7 +703,7 @@ export default function Reports() {
                   : reportData.products?.slice(0, 10).map((p: any) => (
                     <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-default">
                       <div>
-                        <p className="text-[12.5px] font-medium text-[#e2e5eb]">{p.name}</p>
+                        <p className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{p.name}</p>
                         <p className="text-[11px] text-[#3a404f]">{p.category.name} · {p.sku}</p>
                       </div>
                       <div className="text-right">
@@ -720,7 +720,7 @@ export default function Reports() {
                   : reportData.expenses?.slice(0, 10).map((e: any) => (
                     <div key={e.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-default">
                       <div>
-                        <p className="text-[12.5px] font-medium text-[#e2e5eb]">{e.category}</p>
+                        <p className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{e.category}</p>
                         <p className="text-[11px] text-[#3a404f]">{new Date(e.expenseDate).toLocaleDateString()} · {e.description}</p>
                       </div>
                       <div className="text-right">
@@ -763,7 +763,7 @@ export default function Reports() {
                       return (
                         <div key={mode}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[12px] text-[#c8cdd8] capitalize">{mode}</span>
+                            <span className="text-[12px] capitalize" style={{ color: 'var(--text)' }}>{mode}</span>
                             <span className="text-[12px] text-[#6b7280]">{count} · {fmt(total)}</span>
                           </div>
                           <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
@@ -796,7 +796,7 @@ export default function Reports() {
                       {bars.map(({ label, count, color }) => (
                         <div key={label}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[12px] text-[#c8cdd8]">{label}</span>
+                            <span className="text-[12px]" style={{ color: 'var(--text)' }}>{label}</span>
                             <span className="text-[12px] text-[#6b7280]">{count} products</span>
                           </div>
                           <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
@@ -826,7 +826,7 @@ export default function Reports() {
                       return (
                         <div key={status}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-[12px] text-[#c8cdd8] capitalize">{status}</span>
+                            <span className="text-[12px] capitalize" style={{ color: 'var(--text)' }}>{status}</span>
                             <span className="text-[12px] text-[#6b7280]">{count} · {fmt(total)}</span>
                           </div>
                           <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">

@@ -49,18 +49,14 @@ const RefundModal = ({ sale, onClose, onSuccess }: RefundModalProps) => {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
-    >
-      <div className="w-full max-w-lg bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="modal-content w-full max-w-lg flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
-            <p className="text-[14px] font-semibold text-[#f0f2f5]">Request Refund</p>
-            <p className="text-[11px] text-[#3a404f]">Invoice: {sale.invoiceNo}</p>
+            <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>Request Refund</p>
+            <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Invoice: {sale.invoiceNo}</p>
           </div>
           <button
             onClick={onClose}
@@ -107,7 +103,7 @@ const RefundModal = ({ sale, onClose, onSuccess }: RefundModalProps) => {
                 max={sale.total}
                 value={amount}
                 onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                className="w-full h-9 pl-6 pr-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all"
+                className="input-field h-9 text-[13px] pl-6 pr-3"
               />
             </div>
             <p className="text-[11px] text-[#8b95a7] mt-1">
@@ -123,7 +119,7 @@ const RefundModal = ({ sale, onClose, onSuccess }: RefundModalProps) => {
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all"
+              className="input-field h-9 text-[13px] px-3"
             >
               <option value="">Select a reason...</option>
               <option value="DAMAGED">Damaged Product</option>
@@ -146,7 +142,7 @@ const RefundModal = ({ sale, onClose, onSuccess }: RefundModalProps) => {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter any additional details..."
               rows={3}
-              className="w-full px-3 py-2 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all resize-none"
+              className="input-field px-3 py-2 text-[13px] resize-none"
             />
           </div>
 
@@ -160,7 +156,7 @@ const RefundModal = ({ sale, onClose, onSuccess }: RefundModalProps) => {
         </form>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-white/[0.06] shrink-0 bg-white/[0.02]">
+        <div className="flex gap-3 px-6 py-4 shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--card-bg)' }}>
           <button
             type="button"
             onClick={onClose}

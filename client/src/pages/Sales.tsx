@@ -694,8 +694,8 @@ const Sales = () => {
 
       {/* Barcode scanner modal */}
       {showScanner && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="rounded-[12px] w-full max-w-lg overflow-hidden shadow-2xl" style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)' }}>
+        <div className="modal-overlay">
+          <div className="modal-content rounded-[12px] w-full max-w-lg overflow-hidden shadow-2xl" style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)' }}>
             <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
           </div>
         </div>
@@ -703,8 +703,8 @@ const Sales = () => {
 
       {showReceipt && completedSale && (
         <>
-          <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm no-print flex items-center justify-center p-4">
-            <div className="w-full max-w-3xl rounded-[18px] border border-white/[0.08] shadow-2xl overflow-hidden" style={{ background: 'var(--panel-bg)' }}>
+          <div className="modal-overlay no-print">
+            <div className="modal-content w-full max-w-3xl rounded-[18px] shadow-2xl overflow-hidden" style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)' }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                 <div>
                   <p className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>Receipt ready</p>

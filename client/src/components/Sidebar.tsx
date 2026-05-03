@@ -213,7 +213,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
             <div className="flex-1 overflow-hidden">
               <p className="text-[12.5px] font-semibold text-[#c8cdd8] truncate">{user?.fullName}</p>
               <span
-                className={`inline-block text-[10px] font-semibold tracking-[0.04em] px-1.5 py-px rounded mt-0.5 ${
+                className={`flex text-[10px] font-semibold tracking-[0.04em] px-1.5 rounded mt-0.5 ${
                   rolePillStyle[userRole] ?? rolePillStyle.STAFF
                 }`}
                 style={{ fontFamily: "'DM Mono', monospace" }}

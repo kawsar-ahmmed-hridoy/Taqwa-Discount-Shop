@@ -106,7 +106,7 @@ const HistoryModal = ({ customer, onClose }: { customer: Customer; onClose: () =
           ].map(({ label, value }) => (
             <div key={label} className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-3 py-2.5 text-center">
               <p className="text-[10px] uppercase tracking-wider text-[#3a404f] font-semibold">{label}</p>
-              <p className="text-[14px] font-bold text-[#e2e5eb] mt-1">{value}</p>
+              <p className="text-[14px] font-bold leading-none" style={{ color: 'var(--text)', marginTop: '0.25rem' }}>{value}</p>
             </div>
           ))}
         </div>
@@ -118,7 +118,7 @@ const HistoryModal = ({ customer, onClose }: { customer: Customer; onClose: () =
           ) : history.map(sale => (
             <div key={sale.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-white/[0.03] transition-colors">
               <div>
-                <p className="text-[12.5px] font-medium text-[#e2e5eb]">{sale.invoiceNo}</p>
+                <p className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{sale.invoiceNo}</p>
                 <p className="text-[11px] text-[#3a404f]">{new Date(sale.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {sale.items.length} items</p>
               </div>
               <span className="text-[12.5px] font-semibold text-emerald-400">{fmt(sale.total)}</span>
@@ -133,9 +133,8 @@ const HistoryModal = ({ customer, onClose }: { customer: Customer; onClose: () =
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
 const Overlay = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-    onClick={e => e.target === e.currentTarget && onClose()}>
-    <div className="bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl w-full" style={{ maxWidth: 'fit-content', fontFamily: "'DM Sans', sans-serif" }}>
+  <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="modal-content w-full" style={{ maxWidth: 'fit-content', fontFamily: "'DM Sans', sans-serif" }}>
       {children}
     </div>
   </div>
@@ -143,7 +142,7 @@ const Overlay = ({ children, onClose }: { children: React.ReactNode; onClose: ()
 
 const ModalHeader = ({ title, onClose }: { title: string; onClose: () => void }) => (
   <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-    <p className="text-[15px] font-semibold text-[#f0f2f5]">{title}</p>
+    <p className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>{title}</p>
     <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
   </div>
 );
@@ -188,7 +187,7 @@ const Customers = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Customers</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Customers</h1>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">{customers.length} registered customers</p>
         </div>
         <button onClick={() => setModal('new')} className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
@@ -207,7 +206,7 @@ const Customers = () => {
           <div key={label} className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-4 py-3.5 flex items-start justify-between hover:border-white/[0.09] transition-colors">
             <div>
               <p className="text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{label}</p>
-              <p className="text-[19px] font-bold text-[#e2e5eb] mt-1 leading-none">{value}</p>
+              <p className="text-[19px] font-bold leading-none" style={{ color: 'var(--text)', marginTop: '0.25rem' }}>{value}</p>
               {sub && <p className="text-[11px] text-[#3a404f] mt-1 truncate max-w-[100px]">{sub}</p>}
             </div>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}><Icon size={14} /></div>
@@ -266,7 +265,7 @@ const Customers = () => {
                     <div className="flex items-center gap-2.5">
                       <Avatar name={c.name} />
                       <div>
-                        <p className="text-[13px] font-medium text-[#e2e5eb]">{c.name}</p>
+                        <p className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>{c.name}</p>
                         <p className="text-[11px] text-[#3a404f]">Joined {new Date(c.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                       </div>
                     </div>

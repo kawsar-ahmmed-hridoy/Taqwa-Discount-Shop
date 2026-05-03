@@ -16,7 +16,7 @@ interface Staff {
 const F: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 
 const inp: React.CSSProperties = {
-  ...F, background: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.07)',
+  ...F, background: 'var(--surface-1)', border: '1px solid var(--border-subtle)',
   borderRadius: 8, color: 'var(--text)', fontSize: 13,
   padding: '9px 12px', outline: 'none', width: '100%', boxSizing: 'border-box',
 };
@@ -204,7 +204,7 @@ const StaffPage = () => {
           { label: 'Owners',   value: counts.owners },
           { label: 'Managers', value: counts.managers },
         ].map(s => (
-          <div key={s.label} style={{ background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+          <div key={s.label} style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)',
             borderRadius: 10, padding: '13px 16px' }}>
             <p style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase',
               letterSpacing: '0.05em', margin: '0 0 4px' }}>{s.label}</p>
@@ -250,11 +250,11 @@ const StaffPage = () => {
           </button>
         </div>
       ) : (
-        <div style={{ background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+        <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)',
           borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                 {['Member', 'Role', 'Status', 'Joined', ''].map((h, i) => (
                   <th key={i} style={{ padding: '11px 16px', textAlign: i >= 3 ? 'right' : 'left',
                     fontSize: 11, fontWeight: 600, color: 'var(--muted)',
@@ -267,7 +267,7 @@ const StaffPage = () => {
                 const initials = m.fullName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
                 return (
                   <tr key={m.id}
-                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                    style={{ borderBottom: idx < filtered.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                       transition: 'background 0.1s' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.02)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
@@ -313,19 +313,19 @@ const StaffPage = () => {
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
                         <button onClick={() => openEdit(m)} title="Edit"
-                          style={{ padding: 6, borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)',
+                          style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border-subtle)',
                             background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#6ea8fe'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(110,168,254,0.3)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'; }}>
                           <Edit size={13} />
                         </button>
                         <button onClick={() => setDeleteId(m.id)} title="Delete"
-                          style={{ padding: 6, borderRadius: 6, border: '1px solid rgba(255,255,255,0.07)',
+                          style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border-subtle)',
                             background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
                           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#f87171'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(248,113,113,0.3)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; }}>
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'; }}>
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -335,8 +335,7 @@ const StaffPage = () => {
               })}
             </tbody>
           </table>
-          <div style={{ padding: '9px 16px', borderTop: '1px solid rgba(255,255,255,0.04)',
-            fontSize: 11, color: 'var(--muted)' }}>
+          <div style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)' }}>
             Showing {filtered.length} of {staff.length} members
           </div>
         </div>
@@ -345,26 +344,26 @@ const StaffPage = () => {
       {/* ── Add / Edit Modal ── */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex',
-          alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}>
-          <div style={{ ...F, background: '#111318', border: '1px solid rgba(255,255,255,0.08)',
+          alignItems: 'center', justifyContent: 'center', background: 'var(--modal-overlay)', backdropFilter: 'blur(6px)' }}>
+          <div style={{ ...F, background: 'var(--card-bg)', border: '1px solid var(--border-subtle)',
             borderRadius: 14, width: '100%', maxWidth: 420 }}>
 
             {/* Modal header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ width: 30, height: 30, borderRadius: 8,
                   background: 'rgba(31,111,235,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Shield size={13} color="#6ea8fe" />
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#f0f2f5', margin: 0 }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
                   {selectedStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
                 </p>
               </div>
               <button onClick={closeModal}
-                style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.04)', color: '#6b7280', cursor: 'pointer',
+                style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border-subtle)',
+                  background: 'var(--surface-2)', color: 'var(--muted)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={13} />
               </button>

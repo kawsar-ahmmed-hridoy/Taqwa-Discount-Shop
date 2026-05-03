@@ -134,7 +134,7 @@ export default function Products() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Products</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Products</h1>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">
             {filtered.length !== products.length ? `${filtered.length} of ${products.length}` : products.length} products
           </p>
@@ -221,7 +221,7 @@ export default function Products() {
                   <tr key={p.id}
                     className={`hover:bg-white/[0.025] transition-colors group ${i < filtered.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-[#e2e5eb]">{p.name}</div>
+                      <div className="font-medium" style={{ color: 'var(--text)' }}>{p.name}</div>
                       {p.brand && <div className="text-[11.5px] text-[#3a404f] mt-0.5">{p.brand}</div>}
                       {!!p.discount && (
                         <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400">
@@ -247,7 +247,7 @@ export default function Products() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="font-semibold text-[#e2e5eb]">৳{finalPrice.toFixed(2)}</div>
+                      <div className="font-semibold text-emerald-400">৳{finalPrice.toFixed(2)}</div>
                       <div className="text-[11.5px] text-[#3a404f] mt-0.5">cost ৳{p.purchasePrice.toFixed(2)}</div>
                       {m && (
                         <span className={`inline-flex items-center gap-0.5 mt-1 text-[10.5px] font-semibold px-1.5 py-0.5 rounded
@@ -257,7 +257,7 @@ export default function Products() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="font-semibold text-[#e2e5eb]">{p.stockQuantity}</div>
+                      <div className="font-semibold" style={{ color: 'var(--text)' }}>{p.stockQuantity}</div>
                       <span className={`inline-flex items-center gap-1 mt-1 text-[10.5px] font-medium px-1.5 py-0.5 rounded-full ring-1 ring-inset ${si.pill}`}>
                         <StockIcon size={9} />{si.label}
                       </span>

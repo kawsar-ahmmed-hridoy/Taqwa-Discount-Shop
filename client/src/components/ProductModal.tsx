@@ -8,7 +8,7 @@ interface Category { id: number; name: string; }
 
 const EMPTY = { name: '', sku: '', barcode: '', categoryId: 0, brand: '', purchasePrice: 0, sellingPrice: 0, discount: 0, stockQuantity: 0, minStockLevel: 10, expiryDate: '' };
 
-const inp   = "w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all";
+  const inp   = "input-field h-9 text-[13px]";
 const Lbl   = ({ children }: { children: React.ReactNode }) => <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#3a404f] mb-1.5">{children}</p>;
 const Sec   = ({ icon: Icon, label }: { icon: typeof Tag; label: string }) => (
   <div className="flex items-center gap-2 mb-3">
@@ -73,19 +73,18 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
   const marginColor = margin === null ? '' : +margin >= 20 ? 'text-emerald-400' : +margin >= 10 ? 'text-amber-400' : 'text-red-400';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={e => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="w-full max-w-xl bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="modal-content w-full max-w-xl flex flex-col max-h-[92vh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#1f6feb]/15 flex items-center justify-center">
               <Package size={14} className="text-[#6ea8fe]" />
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-[#f0f2f5]">{product ? 'Edit Product' : 'New Product'}</p>
-              <p className="text-[11px] text-[#3a404f]">{product ? `SKU: ${product.sku}` : 'Fill in the product details'}</p>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>{product ? 'Edit Product' : 'New Product'}</p>
+                <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{product ? `SKU: ${product.sku}` : 'Fill in the product details'}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
@@ -94,7 +93,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
         </div>
 
         {/* Form */}
-        <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-6">
 
           {/* ── Basic info ── */}
           <div>
@@ -195,7 +194,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
           </div>
 
           {/* Footer */}
-          <div className="flex gap-2.5 pt-1 sticky bottom-0 bg-[#13161c] pb-1">
+          <div className="flex gap-2.5 pt-1 sticky bottom-0 pb-1" style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border-subtle)' }}>
             <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">
               Cancel
             </button>

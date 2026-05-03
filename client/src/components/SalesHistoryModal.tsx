@@ -90,18 +90,14 @@ const SalesHistoryModal = ({ onClose }: SalesHistoryModalProps) => {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-        style={{ fontFamily: "'DM Sans', sans-serif" }}
-      >
-        <div className="w-full max-w-2xl bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="modal-content w-full max-w-2xl flex flex-col max-h-[90vh]">
           
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <div>
-              <p className="text-[14px] font-semibold text-[#f0f2f5]">Sales History</p>
-              <p className="text-[11px] text-[#3a404f]">View your past sales and request refunds</p>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>Sales History</p>
+              <p className="text-[11px]" style={{ color: 'var(--muted)' }}>View your past sales and request refunds</p>
             </div>
             <button
               onClick={onClose}
@@ -118,7 +114,7 @@ const SalesHistoryModal = ({ onClose }: SalesHistoryModalProps) => {
               placeholder="Search by invoice number or customer..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] placeholder:text-[#3a404f] outline-none focus:border-[#1f6feb]/60 transition-all"
+              className="input-field h-9 text-[13px] px-3"
             />
           </div>
 

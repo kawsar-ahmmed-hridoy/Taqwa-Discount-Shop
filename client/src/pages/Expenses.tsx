@@ -30,7 +30,7 @@ const Stat = ({ label, value, sub, icon: Icon, iconColor }: { label: string; val
   <div className="border border-white/[0.055] rounded-xl bg-white/[0.02] px-4 py-4 flex items-start justify-between hover:border-white/[0.09] transition-colors">
     <div>
       <p className="text-[10.5px] font-semibold uppercase tracking-widest text-[#3a404f]">{label}</p>
-      <p className="text-[21px] font-bold text-[#e2e5eb] mt-1.5 leading-none">{value}</p>
+      <p className="text-[21px] font-bold leading-none" style={{ color: 'var(--text)', marginTop: '1.5rem' }}>{value}</p>
       {sub && <p className="text-[11px] text-[#3a404f] mt-1.5">{sub}</p>}
     </div>
     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconColor}`}>
@@ -59,14 +59,14 @@ const AddModal = ({ onClose, onSave }: { onClose: () => void; onSave: () => void
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-content w-full max-w-md" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
-            <h2 className="text-[15px] font-semibold text-[#f0f2f5]">New Expense</h2>
-            <p className="text-[11.5px] text-[#3a404f] mt-0.5">Submit for approval</p>
+            <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>New Expense</h2>
+            <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--muted)' }}>Submit for approval</p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06]" style={{ color: 'var(--muted)' }}>
             <X size={14} />
           </button>
         </div>
@@ -75,7 +75,7 @@ const AddModal = ({ onClose, onSave }: { onClose: () => void; onSave: () => void
             <div className="col-span-2">
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Category</label>
               <select required value={form.category} onChange={e => set('category', e.target.value)}
-                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all appearance-none">
+                className="input-field h-9 text-[13px] appearance-none">
                 <option value="">Select a category</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -83,26 +83,26 @@ const AddModal = ({ onClose, onSave }: { onClose: () => void; onSave: () => void
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Amount (BDT)</label>
               <input required type="number" min="0" step="0.01" placeholder="0.00" value={form.amount} onChange={e => set('amount', e.target.value)}
-                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+                className="input-field h-9 text-[13px]" />
             </div>
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Date</label>
               <input required type="date" value={form.expenseDate} onChange={e => set('expenseDate', e.target.value)}
-                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+                className="input-field h-9 text-[13px]" />
             </div>
             <div className="col-span-2">
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">Description</label>
               <textarea required rows={3} placeholder="What was this expense for?" value={form.description} onChange={e => set('description', e.target.value)}
-                className="w-full px-3 py-2.5 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all resize-none" />
+                className="input-field px-3 py-2.5 text-[13px] resize-none" />
             </div>
           </div>
           <div className="flex gap-2.5 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">
+              className="flex-1 h-9 text-[13px] font-medium border rounded-lg hover:bg-white/[0.04] transition-all" style={{ color: 'var(--muted)', borderColor: 'var(--border-subtle)' }}>
               Cancel
             </button>
             <button type="submit" disabled={saving}
-              className="flex-1 h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all">
+              className="flex-1 h-9 text-[13px] font-medium text-white bg-[var(--accent)] rounded-lg hover:opacity-95 disabled:opacity-50 transition-all">
               {saving ? 'Submitting…' : 'Submit'}
             </button>
           </div>
@@ -176,7 +176,7 @@ const Expenses = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Expenses</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Expenses</h1>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">Track and manage business expenses</p>
         </div>
         <button onClick={() => setShowModal(true)}
@@ -255,7 +255,7 @@ const Expenses = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[#c8cdd8] max-w-[200px] truncate" title={exp.description}>{exp.description}</td>
-                    <td className="px-4 py-3 font-semibold text-[#e2e5eb] whitespace-nowrap">{fmt(exp.amount)}</td>
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap" style={{ color: 'var(--text)' }}>{fmt(exp.amount)}</td>
                     <td className="px-4 py-3 text-[#6b7280]">{exp.user.fullName}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11.5px] font-medium border ${cfg.bg} ${cfg.color}`}>

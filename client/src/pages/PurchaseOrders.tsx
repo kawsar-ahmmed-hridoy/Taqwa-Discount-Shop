@@ -30,7 +30,6 @@ const Badge = ({ status }: { status: keyof typeof STATUS }) => {
   );
 };
 
-const inp = "w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all";
 const Lbl = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[10.5px] font-semibold uppercase tracking-wider text-[#3a404f] mb-1.5">{children}</p>
 );
@@ -43,7 +42,7 @@ const Drawer = ({ order, onClose }: { order: PurchaseOrder; onClose: () => void 
     <div className="w-[400px] bg-[#13161c] border-l border-white/[0.07] flex flex-col">
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
         <div>
-          <p className="text-[14px] font-semibold text-[#f0f2f5]">{order.orderNo}</p>
+          <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>{order.orderNo}</p>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">{order.supplier.name}</p>
         </div>
         <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
@@ -61,10 +60,10 @@ const Drawer = ({ order, onClose }: { order: PurchaseOrder; onClose: () => void 
             {order.items.map(item => (
               <div key={item.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-white/[0.04] bg-white/[0.02]">
                 <div>
-                  <p className="text-[12.5px] font-medium text-[#e2e5eb]">{item.product.name}</p>
+                  <p className="text-[12.5px] font-medium" style={{ color: 'var(--text)' }}>{item.product.name}</p>
                   <p className="text-[11px] text-[#3a404f]">{item.quantity} × {fmt(item.price)}</p>
                 </div>
-                <span className="text-[12.5px] font-semibold text-[#e2e5eb]">{fmt(item.total)}</span>
+                <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text)' }}>{fmt(item.total)}</span>
               </div>
             ))}
           </div>
@@ -100,15 +99,14 @@ const CreateModal = ({ suppliers, products, onClose, onCreated }: { suppliers: a
   const subtotal = form.items.reduce((s, it) => s + it.quantity * it.price, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={e => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="w-full max-w-2xl bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <div className="modal-content w-full max-w-2xl flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-[#1f6feb]/15 flex items-center justify-center"><Package size={14} className="text-[#6ea8fe]" /></div>
             <div>
-              <p className="text-[14px] font-semibold text-[#f0f2f5]">New Purchase Order</p>
-              <p className="text-[11px] text-[#3a404f]">Order stock from a supplier</p>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>New Purchase Order</p>
+                <p className="text-[11px]" style={{ color: 'var(--muted)' }}>Order stock from a supplier</p>
             </div>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
@@ -116,7 +114,7 @@ const CreateModal = ({ suppliers, products, onClose, onCreated }: { suppliers: a
         <form onSubmit={submit} className="flex-1 overflow-y-auto p-6 space-y-5">
           <div>
             <Lbl>Supplier *</Lbl>
-            <select required value={form.supplierId} onChange={e => setForm(f => ({ ...f, supplierId: +e.target.value }))} className={`${inp} appearance-none`}>
+            <select required value={form.supplierId} onChange={e => setForm(f => ({ ...f, supplierId: +e.target.value }))} className="input-field appearance-none">
               <option value={0} disabled>Select a supplier…</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -129,18 +127,18 @@ const CreateModal = ({ suppliers, products, onClose, onCreated }: { suppliers: a
                 <Plus size={11} /> Add row
               </button>
             </div>
-            <div className="grid grid-cols-[1fr_64px_100px_24px] gap-1.5 mb-2 px-0.5">
+              <div className="grid grid-cols-[1fr_64px_100px_24px] gap-1.5 mb-2 px-0.5">
               {['Product', 'Qty', 'Price (৳)', ''].map(h => <p key={h} className="text-[10px] uppercase tracking-wider text-[#3a404f] font-semibold">{h}</p>)}
             </div>
             <div className="space-y-2">
               {form.items.map((item, i) => (
                 <div key={i} className="grid grid-cols-[1fr_64px_100px_24px] gap-1.5 items-center">
-                  <select required value={item.productId} onChange={e => updateItem(i, 'productId', +e.target.value)} className={`${inp} appearance-none`}>
+                  <select required value={item.productId} onChange={e => updateItem(i, 'productId', +e.target.value)} className="input-field appearance-none">
                     <option value={0} disabled>Select…</option>
                     {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
-                  <input type="number" required min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', +e.target.value)} className={`${inp} text-center`} />
-                  <input type="number" required min="0" step="0.01" value={item.price} onChange={e => updateItem(i, 'price', +e.target.value)} className={inp} />
+                  <input type="number" required min="1" value={item.quantity} onChange={e => updateItem(i, 'quantity', +e.target.value)} className="input-field text-center" />
+                  <input type="number" required min="0" step="0.01" value={item.price} onChange={e => updateItem(i, 'price', +e.target.value)} className="input-field" />
                   <button type="button" onClick={() => setForm(f => ({ ...f, items: f.items.filter((_, j) => j !== i) }))}
                     disabled={form.items.length === 1}
                     className="w-6 h-6 flex items-center justify-center rounded-md text-[#3a404f] hover:text-red-400 hover:bg-red-400/10 disabled:opacity-20 transition-all">
@@ -152,7 +150,7 @@ const CreateModal = ({ suppliers, products, onClose, onCreated }: { suppliers: a
             {subtotal > 0 && (
               <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/[0.05]">
                 <span className="text-[11.5px] text-[#3a404f]">Estimated total</span>
-                <span className="text-[14px] font-bold text-[#e2e5eb]">{fmt(subtotal)}</span>
+                <span className="text-[14px] font-bold" style={{ color: 'var(--text)' }}>{fmt(subtotal)}</span>
               </div>
             )}
           </div>
@@ -224,7 +222,7 @@ const PurchaseOrders = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Purchase Orders</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Purchase Orders</h1>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">{orders.length} total orders</p>
         </div>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
@@ -291,10 +289,10 @@ const PurchaseOrders = () => {
               {visible.map((o, i) => (
                 <tr key={o.id} className={`border-b border-white/[0.035] hover:bg-white/[0.025] transition-colors ${i % 2 ? 'bg-white/[0.01]' : ''}`}>
                   <td className="px-4 py-3 font-semibold text-[#6ea8fe] font-mono text-[12px]">{o.orderNo}</td>
-                  <td className="px-4 py-3 text-[#c8cdd8]">{o.supplier.name}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text)' }}>{o.supplier.name}</td>
                   <td className="px-4 py-3 text-[#6b7280]">{fmtDate(o.orderDate)}</td>
                   <td className="px-4 py-3 text-[#6b7280] text-right">{o.items.length}</td>
-                  <td className="px-4 py-3 font-semibold text-[#e2e5eb] text-right font-mono">{fmt(o.total)}</td>
+                  <td className="px-4 py-3 font-semibold text-right font-mono" style={{ color: 'var(--text)' }}>{fmt(o.total)}</td>
                   <td className="px-4 py-3 text-right"><Badge status={o.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">

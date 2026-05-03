@@ -45,40 +45,39 @@ const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
   useEffect(() => () => { stop(); }, []);
 
   return (
-    <div className="bg-[#13161c] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl w-auto"
-      style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="rounded-2xl overflow-hidden shadow-2xl w-auto" style={{ fontFamily: "'DM Sans', sans-serif", background: 'var(--card-bg)', border: '1px solid var(--border-subtle)' }}>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div className="flex items-center gap-2.5">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${scanning ? 'bg-[#1f6feb]/20' : 'bg-white/[0.04]'}`}>
-            <ScanLine size={14} className={scanning ? 'text-[#6ea8fe]' : 'text-[#3a404f]'} />
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${scanning ? 'bg-[var(--accent)]/20' : 'bg-[var(--surface-2)]'}`}>
+            <ScanLine size={14} className={scanning ? 'text-[var(--accent)]' : 'text-[var(--muted)]'} />
           </div>
           <div>
-            <p className="text-[13.5px] font-semibold text-[#f0f2f5]">Barcode Scanner</p>
-            <p className="text-[10.5px] text-[#3a404f]">{scanning ? 'Scanning…' : 'Ready to scan'}</p>
+            <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text)' }}>Barcode Scanner</p>
+            <p className="text-[10.5px]" style={{ color: 'var(--muted)' }}>{scanning ? 'Scanning…' : 'Ready to scan'}</p>
           </div>
         </div>
         {onClose && (
           <button onClick={() => { stop(); onClose(); }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--surface-2)] transition-all" style={{ color: 'var(--muted)' }}>
             <X size={14} />
           </button>
         )}
       </div>
 
       {/* Viewfinder */}
-      <div className="relative bg-[#0d0f13] aspect-square overflow-hidden">
+      <div className="relative aspect-square overflow-hidden" style={{ background: 'var(--surface-2)' }}>
         {/* Scanner mount */}
         <div id="qr-reader" className="w-full h-full [&>video]:w-full [&>video]:h-full [&>video]:object-cover [&>img]:hidden [&_div:last-child]:hidden" />
 
         {/* Idle overlay */}
         {!scanning && !error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d0f13]">
-            <div className="w-16 h-16 rounded-2xl border-2 border-white/[0.08] bg-white/[0.03] flex items-center justify-center">
-              <Camera size={28} className="text-[#3a404f]" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'var(--surface-2)' }}>
+            <div className="w-16 h-16 rounded-2xl border-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Camera size={28} style={{ color: 'var(--muted)' }} />
             </div>
-            <p className="text-[12px] text-[#3a404f]">Camera preview will appear here</p>
+            <p className="text-[12px]" style={{ color: 'var(--muted)' }}>Camera preview will appear here</p>
           </div>
         )}
 
@@ -105,12 +104,12 @@ const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
 
         {/* Error overlay */}
         {error && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0d0f13] px-6 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'var(--surface-2)' }}>
             <div className="w-12 h-12 rounded-xl bg-red-400/10 border border-red-400/20 flex items-center justify-center">
               <AlertCircle size={20} className="text-red-400" />
             </div>
-            <p className="text-[12px] text-[#c8cdd8] leading-relaxed">{error}</p>
-            <button onClick={() => setError('')} className="text-[12px] text-[#6ea8fe] hover:underline">Dismiss</button>
+            <p className="text-[12px] leading-relaxed text-center px-6" style={{ color: 'var(--text)' }}>{error}</p>
+            <button onClick={() => setError('')} className="text-[12px] text-[var(--accent)] hover:underline">Dismiss</button>
           </div>
         )}
       </div>

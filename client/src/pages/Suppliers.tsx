@@ -54,15 +54,14 @@ const Modal = ({ supplier, onClose, onSaved }: { supplier: Supplier | null; onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md bg-[#13161c] border border-white/[0.08] rounded-2xl shadow-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-content w-full max-w-md" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div>
-            <p className="text-[15px] font-semibold text-[#f0f2f5]">{supplier ? `Edit — ${supplier.name}` : 'New Supplier'}</p>
-            <p className="text-[11.5px] text-[#3a404f] mt-0.5">{supplier ? 'Update supplier information' : 'Add a new supplier'}</p>
+            <p className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>{supplier ? `Edit — ${supplier.name}` : 'New Supplier'}</p>
+            <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--muted)' }}>{supplier ? 'Update supplier information' : 'Add a new supplier'}</p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all"><X size={14} /></button>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06]" style={{ color: 'var(--muted)' }}><X size={14} /></button>
         </div>
         <form onSubmit={submit} className="p-6 space-y-4">
           {FIELDS.map(({ key, label, type, required, placeholder }) => (
@@ -70,12 +69,12 @@ const Modal = ({ supplier, onClose, onSaved }: { supplier: Supplier | null; onCl
               <label className="text-[11px] font-semibold uppercase tracking-wider text-[#3a404f] block mb-1.5">{label}{required && ' *'}</label>
               <input type={type} required={required} placeholder={placeholder} value={(form as any)[key]}
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                className="w-full h-9 px-3 text-[13px] bg-white/[0.04] border border-white/[0.07] rounded-lg text-[#c8cdd8] outline-none focus:border-[#1f6feb]/60 transition-all" />
+                className="input-field h-9 text-[13px]" />
             </div>
           ))}
           <div className="flex gap-2.5 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">Cancel</button>
-            <button type="submit" disabled={saving} className="flex-1 h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all">
+            <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium border rounded-lg hover:bg-white/[0.04] transition-all" style={{ color: 'var(--muted)', borderColor: 'var(--border-subtle)' }}>Cancel</button>
+            <button type="submit" disabled={saving} className="flex-1 h-9 text-[13px] font-medium text-white bg-[var(--accent)] rounded-lg hover:opacity-95 disabled:opacity-50 transition-all">
               {saving ? 'Saving…' : supplier ? 'Update' : 'Create'}
             </button>
           </div>
@@ -122,7 +121,7 @@ const Suppliers = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold text-[#f0f2f5] tracking-tight">Suppliers</h1>
+          <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Suppliers</h1>
           <p className="text-[11.5px] text-[#3a404f] mt-0.5">{suppliers.length} supplier{suppliers.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setModal('new')} className="flex items-center gap-1.5 px-3 h-8 text-[12.5px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] transition-all">
@@ -162,7 +161,7 @@ const Suppliers = () => {
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar name={s.name} />
                   <div className="min-w-0">
-                    <p className="text-[13.5px] font-semibold text-[#e2e5eb] truncate">{s.name}</p>
+                    <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text)' }}>{s.name}</p>
                     <p className="text-[11.5px] text-[#3a404f] flex items-center gap-1 mt-0.5"><User size={10} />{s.contactPerson}</p>
                   </div>
                 </div>

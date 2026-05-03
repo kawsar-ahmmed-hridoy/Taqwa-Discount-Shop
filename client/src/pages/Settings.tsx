@@ -7,7 +7,7 @@ import { Percent, DollarSign, Globe, Save } from 'lucide-react';
 const F: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
 
 const inp: React.CSSProperties = {
-  ...F, background: 'var(--card-bg)', border: '1px solid rgba(255,255,255,0.07)',
+  ...F, background: 'var(--surface-1)', border: '1px solid var(--border-subtle)',
   borderRadius: 8, color: 'var(--text)', fontSize: 13,
   padding: '9px 12px', outline: 'none', width: '100%', boxSizing: 'border-box',
   transition: 'border-color 0.15s',
@@ -24,7 +24,7 @@ const Field = ({ label, hint, children }: {
   label: string; hint?: string; children: React.ReactNode;
 }) => (
   <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 20, alignItems: 'start',
-    padding: '14px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+    padding: '14px 0', borderBottom: '1px solid var(--border-subtle)' }}>
     <div>
       <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', margin: 0 }}>{label}</p>
       {hint && <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3, lineHeight: 1.5 }}>{hint}</p>}
@@ -51,7 +51,7 @@ const SaveRow = ({ saving, onClear }: { saving: boolean; onClear?: () => void })
   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 18 }}>
     {onClear && (
       <button type="button" onClick={onClear}
-        style={{ ...F, padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)',
+        style={{ ...F, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)',
           background: 'transparent', color: 'var(--muted)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
         Clear
       </button>
@@ -68,13 +68,13 @@ const SaveRow = ({ saving, onClear }: { saving: boolean; onClear?: () => void })
 );
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
+  <div style={{ background: 'var(--panel-bg)', border: '1px solid var(--border-subtle)',
     borderRadius: 12, padding: '22px 26px' }}>
     {children}
   </div>
 );
 
-const Divider = () => <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '6px 0' }} />;
+const Divider = () => <div style={{ borderTop: '1px solid var(--border-subtle)', margin: '6px 0' }} />;
 
 const CURRENCIES = [
   { value: 'BDT', label: 'BDT — Bangladeshi Taka' },
@@ -144,7 +144,7 @@ const Settings = () => {
                 step="0.01"
                 value={general.vat_rate}
                 onChange={e => setGeneral(g => ({ ...g, vat_rate: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30, paddingRight: 28 }}
+                style={{ ...inp, paddingLeft: 30, paddingRight: 28, borderWidth: '0.5px', borderStyle: 'solid'}}
               />
             </IconWrap>
           </Field>
@@ -153,7 +153,7 @@ const Settings = () => {
               <select
                 value={general.currency}
                 onChange={e => setGeneral(g => ({ ...g, currency: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30, appearance: 'none' }}
+                style={{ ...inp, paddingLeft: 30, appearance: 'none', borderWidth: '0.5px', borderStyle: 'solid'}}
               >
                 {CURRENCIES.map(c => (
                   <option key={c.value} value={c.value}>
@@ -181,7 +181,7 @@ const Settings = () => {
                 step="0.01"
                 value={general.loyalty_points_rate}
                 onChange={e => setGeneral(g => ({ ...g, loyalty_points_rate: e.target.value }))}
-                style={{ ...inp, paddingLeft: 30 }}
+                style={{ ...inp, paddingLeft: 30, borderWidth: '0.5px', borderStyle: 'solid' }}
               />
             </IconWrap>
           </Field>
