@@ -5,12 +5,6 @@ import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { ShoppingBag, Eye, EyeOff, X } from 'lucide-react';
 
-const credentials = [
-  { role: 'Owner', email: 'owner@taqwa.com', password: 'owner123' },
-  { role: 'Manager', email: 'manager@taqwa.com', password: 'manager123' },
-  { role: 'Staff', email: 'staff@taqwa.com', password: 'staff123' },
-];
-
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,15 +116,17 @@ const Login = () => {
     setResetStep('request');
   };
 
-  const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition";
+  const modalInputClass = "w-full rounded-md border border-white/12 bg-slate-950/40 px-3 py-2 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-500/15";
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.14),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef4ff_100%)]">
 
       {/* Left panel */}
-      <div className="hidden lg:flex w-96 bg-emerald-700 flex-col justify-between p-10 text-white">
+      <div className="hidden lg:flex w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-blue-950 flex-col justify-between p-10 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(96,165,250,0.20),_transparent_35%),radial-gradient(circle_at_bottom_left,_rgba(148,163,184,0.16),_transparent_32%)] pointer-events-none" />
+        <div className="relative z-10 flex h-full flex-col justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-blue-500/20 ring-1 ring-white/10 flex items-center justify-center">
             <ShoppingBag size={18} />
           </div>
           <span className="font-semibold text-base">Taqwa Discount Shop</span>
@@ -138,7 +134,7 @@ const Login = () => {
 
         <div>
           <p className="text-2xl font-light leading-snug mb-8 text-white/90">
-            Manage your store<br />smarter, faster.
+            Manage your store<br />with clarity and control.
           </p>
           <div className="space-y-5">
             {[
@@ -148,7 +144,7 @@ const Login = () => {
               { title: 'Reports & Analytics', desc: 'Daily, weekly & monthly insights' },
             ].map(f => (
               <div key={f.title} className="flex gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-300 mt-1.5 flex-shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-sky-300 mt-1.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium">{f.title}</p>
                   <p className="text-xs text-white/60 mt-0.5">{f.desc}</p>
@@ -158,99 +154,92 @@ const Login = () => {
           </div>
         </div>
 
-        <p className="text-xs text-white/50">© {new Date().getFullYear()} Taqwa · POS v2.4</p>
+        <p className="relative z-10 text-xs text-white/50">© {new Date().getFullYear()} Taqwa · POS v2.4</p>
+        </div>
       </div>
 
       {/* Right form */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-              <ShoppingBag size={16} className="text-white" />
-            </div>
-            <span className="font-semibold text-gray-800">Taqwa Discount Shop</span>
-          </div>
-
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Sign in</h1>
-          <p className="text-sm text-gray-500 mb-7">Access the POS management system</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Email address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                placeholder="you@taqwa.com"
-                autoComplete="email"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <label className="text-xs font-medium text-gray-600">Password</label>
-                <button
-                  type="button"
-                  onClick={() => { setResetEmail(email); setShowForgot(true); setResetStep('request'); }}
-                  className="text-xs text-emerald-600 hover:text-emerald-700"
-                >
-                  Forgot password?
-                </button>
+      <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.20),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(148,163,184,0.12),_transparent_30%)] pointer-events-none" />
+        <div className="relative z-10 w-full max-w-sm">
+          <div className="rounded-[24px] border border-white/10 bg-white/7 backdrop-blur-2xl shadow-[0_24px_80px_rgba(2,6,23,0.38)] p-6 text-white">
+            {/* Mobile logo */}
+            <div className="lg:hidden flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-white/15 ring-1 ring-white/10 flex items-center justify-center">
+                <ShoppingBag size={16} className="text-white" />
               </div>
-              <div className="relative">
+              <span className="font-semibold text-white">Taqwa Discount Shop</span>
+            </div>
+
+            <div className="mb-5">
+              <h1 className="text-[24px] font-semibold tracking-tight leading-tight mt-4">Sign in to continue</h1>
+              <p className="text-[13px] text-white/68 mt-2 max-w-sm leading-relaxed">
+                A focused workspace for sales, stock, refunds, and reports all in one place.
+              </p>
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-3.5" aria-label="Sign in form">
+              <div>
+                <label className="block text-sm font-semibold text-white/60 mb-2">Email</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
                   required
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  className={inputClass + ' pr-10'}
+                  placeholder="you@taqwa.com"
+                  autoComplete="email"
+                  className="w-full rounded-md border  border-white/12 bg-slate-950/40 px-3 py-2 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-500/15"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm flex items-center justify-center gap-2 transition mt-2"
-            >
-              {loading
-                ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                : 'Sign in'}
-            </button>
-          </form>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-semibold text-white/60">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setResetEmail(email); setShowForgot(true); setResetStep('request'); }}
+                    className="text-xs text-sky-200 hover:text-white transition"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full rounded-md border border-white/12 bg-slate-950/40 px-3 py-2 pr-10 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-sky-400 focus:ring-4 focus:ring-sky-500/15"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-3 flex items-center text-white/45 hover:text-white transition"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </div>
 
-          {/* Quick access */}
-          <div className="mt-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-px flex-1 bg-gray-100" />
-              <span className="text-xs text-gray-400">Quick access</span>
-              <div className="h-px flex-1 bg-gray-100" />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {credentials.map(c => (
-                <button
-                  key={c.role}
-                  type="button"
-                  onClick={() => { setEmail(c.email); setPassword(c.password); }}
-                  className="border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 rounded-lg p-2.5 text-left transition"
-                >
-                  <p className="text-xs font-semibold text-gray-700">{c.role}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 truncate">{c.email}</p>
-                </button>
-              ))}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-2 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(37,99,235,0.35)] transition hover:from-sky-400 hover:to-blue-500 disabled:opacity-50 flex items-center justify-center gap-2"
+                aria-live="polite"
+              >
+                {loading
+                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <><ShoppingBag size={15} /> Sign in securely</>}
+              </button>
+            </form>
+
+            {/* Quick access */}
+            <div className="mt-5 mb-4">
+              <div className="mt-3 rounded-md border border-white/10 bg-sky-400/10 px-4 py-4 text-xs text-white/75">
+                Need help signing in? Email <a href="mailto:support@taqwa.com" className="font-medium text-sky-200 hover:text-white hover:underline">support@taqwa.com</a>
+              </div>
             </div>
           </div>
         </div>
@@ -259,20 +248,20 @@ const Login = () => {
       {/* Forgot Password Modal */}
       {showForgot && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+          className="modal-overlay"
           onClick={e => e.target === e.currentTarget && closeForgotModal()}
         >
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-6">
+          <div className="w-full max-w-sm rounded-2xl border border-white/12 bg-slate-950/90 backdrop-blur-xl p-6 shadow-[0_20px_60px_rgba(2,6,23,0.55)] text-white">
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Reset password</h2>
-                <p className="text-sm text-gray-500 mt-1">
+                <h2 className="text-lg font-bold text-white">Reset password</h2>
+                <p className="text-sm text-white/65 mt-1">
                   {resetStep === 'request'
                     ? 'We will send a 6-digit code to your email.'
                     : 'Enter the code and choose a new password.'}
                 </p>
               </div>
-              <button onClick={closeForgotModal} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeForgotModal} className="text-white/45 hover:text-white transition">
                 <X size={18} />
               </button>
             </div>
@@ -285,12 +274,13 @@ const Login = () => {
                   required
                   placeholder="your@email.com"
                   autoComplete="email"
-                  className={inputClass}
+                  className={modalInputClass}
+                  aria-label="Reset email"
                 />
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm flex items-center justify-center transition"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm flex items-center justify-center transition shadow-sm shadow-blue-600/20"
                 >
                   {resetLoading
                     ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -299,19 +289,19 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={closeForgotModal}
-                  className="w-full text-sm text-gray-400 hover:text-gray-600 py-1.5 transition"
+                  className="w-full text-sm text-white/50 hover:text-white py-1.5 transition"
                 >
                   Cancel
                 </button>
               </form>
             ) : (
               <form onSubmit={handleConfirmForgotPassword} className="space-y-3">
-                <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                  <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
-                  <p className="text-sm font-medium text-gray-800 mt-1 truncate">{resetEmail}</p>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <p className="text-xs uppercase tracking-wide text-white/45">Email</p>
+                  <p className="text-sm font-medium text-white mt-1 truncate">{resetEmail}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Verification code</label>
+                  <label className="block text-sm font-semibold text-white/70 mb-2">Verification code</label>
                   <input
                     type="text"
                     value={resetCode}
@@ -320,11 +310,11 @@ const Login = () => {
                     inputMode="numeric"
                     placeholder="123456"
                     maxLength={6}
-                    className={inputClass + ' tracking-[0.3em] text-center font-semibold'}
+                    className={modalInputClass + ' tracking-[0.3em] text-center font-semibold'}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">New password</label>
+                  <label className="block text-sm font-semibold text-white/70 mb-2">New password</label>
                   <input
                     type="password"
                     value={resetNewPassword}
@@ -332,11 +322,11 @@ const Login = () => {
                     required
                     placeholder="New password"
                     autoComplete="new-password"
-                    className={inputClass}
+                    className={modalInputClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1.5">Confirm password</label>
+                  <label className="block text-sm font-semibold text-white/70 mb-2">Confirm password</label>
                   <input
                     type="password"
                     value={resetConfirmPassword}
@@ -344,13 +334,13 @@ const Login = () => {
                     required
                     placeholder="Confirm new password"
                     autoComplete="new-password"
-                    className={inputClass}
+                    className={modalInputClass}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={resetConfirmLoading}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm flex items-center justify-center transition"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg py-2.5 text-sm flex items-center justify-center transition shadow-sm shadow-blue-600/20"
                 >
                   {resetConfirmLoading
                     ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -366,7 +356,7 @@ const Login = () => {
                       setResetConfirmPassword('');
                       setResetStep('request');
                     }}
-                    className="w-full text-sm text-gray-500 hover:text-gray-700 py-1.5 transition border border-gray-200 rounded-lg"
+                    className="w-full text-sm text-white/70 hover:text-white py-1.5 transition border border-white/15 rounded-lg bg-white/[0.03]"
                   >
                     Change email
                   </button>
@@ -374,7 +364,7 @@ const Login = () => {
                     type="button"
                     onClick={() => void requestForgotPasswordCode()}
                     disabled={resetLoading}
-                    className="w-full text-sm text-emerald-700 hover:text-emerald-800 py-1.5 transition border border-emerald-200 rounded-lg bg-emerald-50 disabled:opacity-50"
+                    className="w-full text-sm text-sky-100 hover:text-white py-1.5 transition border border-sky-300/30 rounded-lg bg-sky-400/15 disabled:opacity-50"
                   >
                     {resetLoading ? 'Resending…' : 'Resend code'}
                   </button>
