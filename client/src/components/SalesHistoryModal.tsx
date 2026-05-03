@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { saleAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { X, Loader, RotateCcw, ChevronRight } from 'lucide-react';
+import { X, Loader, RotateCcw } from 'lucide-react';
 import RefundModal from './RefundModal';
 
 interface SalesHistoryModalProps {
@@ -65,7 +65,7 @@ const SalesHistoryModal = ({ onClose }: SalesHistoryModalProps) => {
     setShowRefundModal(true);
   };
 
-  const getRefundStatus = (refunds: any[]) => {
+  const getRefundStatus = (refunds?: any[] | null) => {
     if (!refunds || refunds.length === 0) return null;
     const latestRefund = refunds[0];
     return latestRefund.status;
