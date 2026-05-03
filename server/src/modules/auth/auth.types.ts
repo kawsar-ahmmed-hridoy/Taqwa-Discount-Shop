@@ -19,6 +19,17 @@ export interface ResetPasswordRequest {
   ipAddress?: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ConfirmForgotPasswordRequest {
+  verificationId: number;
+  code: string;
+  newPassword: string;
+  ipAddress?: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: {

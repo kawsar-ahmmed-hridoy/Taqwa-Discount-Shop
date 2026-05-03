@@ -38,6 +38,8 @@ export const authAPI = {
     api.post('/auth/reset-password', data),
   forgotPassword: (data: { email: string }) =>
     api.post('/auth/forgot-password', data),
+  confirmForgotPassword: (data: { verificationId: number; code: string; newPassword: string }) =>
+    api.post('/auth/forgot-password/confirm', data),
   getCurrentUser: () => api.get('/auth/me'),
   updateProfile: (data: unknown) => api.put('/auth/profile', data),
 };

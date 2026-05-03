@@ -81,6 +81,20 @@ model StaffVerification {
   @@map("staff_verifications")
 }
 
+model PasswordResetVerification {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("password_reset_verifications")
+}
+
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique

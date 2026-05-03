@@ -228,7 +228,7 @@ const Expenses = () => {
           <DollarSign size={28} className="text-[#3a404f]" />
           <p className="text-[13px] text-[#3a404f]">{search ? 'No matching expenses' : 'No expenses yet'}</p>
           {!search && (
-            <button onClick={() => setShowModal(true)} className="text-[12.5px] text-[#6ea8fe] hover:underline">Add one</button>
+            <button onClick={() => setShowModal(true)} className="text-[12.5px] text-white bg-[#1f6feb] rounded-md px-3 py-1 hover:bg-[#1f6feb]/80 hover:text-white">Add one</button>
           )}
         </div>
       ) : (

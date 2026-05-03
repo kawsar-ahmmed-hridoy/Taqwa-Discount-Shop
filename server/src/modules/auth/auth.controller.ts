@@ -6,11 +6,10 @@ import {
   getCurrentUserService,
   logoutService,
   resetPasswordService,
+  requestForgotPasswordVerification,
+  confirmForgotPasswordVerification,
 } from './auth.service';
 import { HTTP_STATUS, MESSAGES } from '../../constants';
-import { getPrismaClient } from '../../config';
-
-const prisma = getPrismaClient();
 
 
 export const login = async (req: Request, res: Response): Promise<any> => {
@@ -165,23 +164,49 @@ export const forgotPassword = async (req: Request, res: Response): Promise<any> 
       });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const verification = await requestForgotPasswordVerification({ email });
 
-    // Don't reveal if email exists or not for security
-    if (!user) {
+    if (!verification) {
       return res.status(HTTP_STATUS.OK).json({
         success: true,
-        message: 'If an account with this email exists, a reset link will be sent shortly.',
+        message: 'If an account with this email exists, a verification code has been sent.',
       });
     }
 
-    // TODO: Implement email sending with reset token
-    // For now, just return success
     return res.status(HTTP_STATUS.OK).json({
       success: true,
-      message: 'If an account with this email exists, a reset link will be sent shortly.',
+      message: 'Verification code sent to your email',
+      data: verification,
+    });
+  } catch (error: any) {
+    return res.status(error.statusCode || HTTP_STATUS.INTERNAL_ERROR).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const confirmForgotPassword = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { verificationId, code, newPassword } = req.body;
+
+    if (!verificationId || !code || !newPassword) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: 'verificationId, code, and newPassword are required',
+      });
+    }
+
+    await confirmForgotPasswordVerification({
+      verificationId: Number(verificationId),
+      code,
+      newPassword,
+      ipAddress: req.ip,
+    });
+
+    return res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: 'Password reset successfully',
     });
   } catch (error: any) {
     return res.status(error.statusCode || HTTP_STATUS.INTERNAL_ERROR).json({
