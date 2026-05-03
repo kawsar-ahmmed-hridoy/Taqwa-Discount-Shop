@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { productAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { X, Package, Tag, DollarSign, BarChart2, Loader } from 'lucide-react';
+import { useLocaleStore } from '../store/localeStore';
 
 interface ProductModalProps { product: any; onClose: () => void; }
 interface Category { id: number; name: string; }
@@ -19,6 +20,7 @@ const Sec   = ({ icon: Icon, label }: { icon: typeof Tag; label: string }) => (
 );
 
 const ProductModal = ({ product, onClose }: ProductModalProps) => {
+  const { t } = useLocaleStore();
   const [form, setForm]             = useState({ ...EMPTY });
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -44,13 +46,13 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
           set('categoryId', cats[0]?.id ?? 0);
         }
       })
-      .catch(() => toast.error('Failed to load categories'))
+        .catch(() => toast.error(t('Failed to load categories')))
       .finally(() => setLoadingCats(false));
   }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.categoryId) return toast.error('Select a category');
+    if (!form.categoryId) return toast.error(t('Select a category'));
     setSaving(true);
     try {
       const data = { ...form,
@@ -61,10 +63,10 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
         expiryDate: form.expiryDate || null,
       };
       product ? await productAPI.update(product.id, data) : await productAPI.create(data);
-      toast.success(product ? 'Product updated' : 'Product created');
+      toast.success(product ? t('Product updated') : t('Product created'));
       onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Operation failed');
+      toast.error(err.response?.data?.message || t('Operation failed'));
     } finally { setSaving(false); }
   };
 
@@ -83,8 +85,8 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
               <Package size={14} className="text-[#6ea8fe]" />
             </div>
             <div>
-              <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>{product ? 'Edit Product' : 'New Product'}</p>
-                <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{product ? `SKU: ${product.sku}` : 'Fill in the product details'}</p>
+              <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>{product ? t('Edit Product') : t('New Product')}</p>
+                <p className="text-[11px]" style={{ color: 'var(--muted)' }}>{product ? `${t('SKU')}: ${product.sku}` : t('Fill in the product details')}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/[0.06] text-[#3a404f] hover:text-[#c8cdd8] transition-all">
@@ -97,39 +99,39 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
 
           {/* ── Basic info ── */}
           <div>
-            <Sec icon={Tag} label="Basic Information" />
+            <Sec icon={Tag} label={t('Basic Information')} />
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Lbl>Product Name *</Lbl>
+                <Lbl>{t('Product Name')} *</Lbl>
                 <input required type="text" placeholder="e.g. Paracetamol 500mg" value={form.name}
                   onChange={e => set('name', e.target.value)} className={inp} />
               </div>
               <div>
-                <Lbl>SKU *</Lbl>
+                <Lbl>{t('SKU')} *</Lbl>
                 <input required type="text" placeholder="PROD-001" value={form.sku}
                   onChange={e => set('sku', e.target.value.toUpperCase())} className={inp} />
               </div>
               <div>
-                <Lbl>Barcode</Lbl>
+                <Lbl>{t('Barcode')}</Lbl>
                 <input type="text" placeholder="Scan or enter" value={form.barcode}
                   onChange={e => set('barcode', e.target.value)} className={inp} />
               </div>
               <div>
-                <Lbl>Category *</Lbl>
+                <Lbl>{t('Category')} *</Lbl>
                 {loadingCats ? (
                   <div className={`${inp} flex items-center gap-2 text-[#3a404f]`}>
-                    <Loader size={13} className="animate-spin" /> Loading…
+                    <Loader size={13} className="animate-spin" /> {t('Loading…')}
                   </div>
                 ) : (
                   <select required value={form.categoryId} onChange={e => set('categoryId', +e.target.value)} className={`${inp} appearance-none`}>
-                    <option value={0} disabled>Select…</option>
+                    <option value={0} disabled>{t('Select…')}</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 )}
               </div>
               <div>
-                <Lbl>Brand</Lbl>
-                <input type="text" placeholder="Optional" value={form.brand}
+                <Lbl>{t('Brand')}</Lbl>
+                <input type="text" placeholder={t('Optional')} value={form.brand}
                   onChange={e => set('brand', e.target.value)} className={inp} />
               </div>
             </div>
@@ -137,27 +139,27 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
 
           {/* ── Pricing ── */}
           <div>
-            <Sec icon={DollarSign} label="Pricing" />
+            <Sec icon={DollarSign} label={t('Pricing')} />
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Lbl>Purchase Price (৳) *</Lbl>
+                <Lbl>{t('Purchase Price (৳)')} *</Lbl>
                 <input required type="number" step="0.01" min="0" placeholder="0.00" value={form.purchasePrice}
                   onChange={e => set('purchasePrice', e.target.value)} className={inp} />
               </div>
               <div>
-                <Lbl>Selling Price (৳) *</Lbl>
+                <Lbl>{t('Selling Price (৳)')} *</Lbl>
                 <input required type="number" step="0.01" min="0" placeholder="0.00" value={form.sellingPrice}
                   onChange={e => set('sellingPrice', e.target.value)} className={inp} />
               </div>
               <div>
-                <Lbl>Discount (%)</Lbl>
+                <Lbl>{t('Discount (%)')}</Lbl>
                 <input type="number" step="0.1" min="0" max="100" placeholder="0" value={form.discount}
                   onChange={e => set('discount', e.target.value)} className={inp} />
               </div>
 
               {/* Price preview */}
               <div>
-                <Lbl>Effective Price</Lbl>
+                <Lbl>{t('Effective Price')}</Lbl>
                 <div className={`${inp} flex items-center justify-between`}>
                   <span className="font-semibold text-emerald-400">৳{finalPrice.toFixed(2)}</span>
                   {+form.discount > 0 && (
@@ -165,7 +167,7 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
                   )}
                 </div>
                 {margin !== null && (
-                  <p className={`text-[11px] mt-1 font-medium ${marginColor}`}>Margin: {margin}%</p>
+                  <p className={`text-[11px] mt-1 font-medium ${marginColor}`}>{t('Margin')}: {margin}%</p>
                 )}
               </div>
             </div>
@@ -173,21 +175,21 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
 
           {/* ── Stock ── */}
           <div>
-            <Sec icon={BarChart2} label="Stock Management" />
+            <Sec icon={BarChart2} label={t('Stock Management')} />
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Lbl>Stock Quantity *</Lbl>
+                <Lbl>{t('Stock Quantity')} *</Lbl>
                 <input required type="number" min="0" placeholder="0" value={form.stockQuantity}
                   onChange={e => set('stockQuantity', e.target.value)} className={inp} />
               </div>
               <div>
-                <Lbl>Min Stock Level *</Lbl>
+                <Lbl>{t('Min Stock Level')} *</Lbl>
                 <input required type="number" min="0" placeholder="10" value={form.minStockLevel}
                   onChange={e => set('minStockLevel', e.target.value)} className={inp} />
-                <p className="text-[10.5px] text-[#3a404f] mt-1">Alert below this level</p>
+                <p className="text-[10.5px] text-[#3a404f] mt-1">{t('Alert below this level')}</p>
               </div>
               <div className="col-span-2">
-                <Lbl>Expiry Date</Lbl>
+                <Lbl>{t('Expiry Date')}</Lbl>
                 <input type="date" value={form.expiryDate} onChange={e => set('expiryDate', e.target.value)} className={inp} />
               </div>
             </div>
@@ -196,10 +198,10 @@ const ProductModal = ({ product, onClose }: ProductModalProps) => {
           {/* Footer */}
           <div className="flex gap-2.5 pt-1 sticky bottom-0 pb-1" style={{ background: 'var(--card-bg)', borderTop: '1px solid var(--border-subtle)' }}>
             <button type="button" onClick={onClose} className="flex-1 h-9 text-[13px] font-medium text-[#6b7280] border border-white/[0.07] rounded-lg hover:bg-white/[0.04] transition-all">
-              Cancel
+              {t('Cancel')}
             </button>
             <button type="submit" disabled={saving || loadingCats} className="flex-[2] h-9 text-[13px] font-medium text-white bg-[#1f6feb] rounded-lg hover:bg-[#1a5fd4] disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-              {saving ? <><Loader size={13} className="animate-spin" /> Saving…</> : product ? 'Update Product' : 'Add Product'}
+              {saving ? <><Loader size={13} className="animate-spin" /> {t('Saving…')}</> : product ? t('Update Product') : t('Add Product')}
             </button>
           </div>
         </form>

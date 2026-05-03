@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { notificationAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { Bell, X, CheckCircle, AlertTriangle, Info, Package } from 'lucide-react';
+import { useLocaleStore } from '../store/localeStore';
 
 interface Notification {
   id: number;
@@ -18,6 +19,7 @@ interface Notification {
 }
 
 const NotificationCenter = () => {
+  const { language } = useLocaleStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,7 @@ const NotificationCenter = () => {
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hours ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US');
   };
 
   return (

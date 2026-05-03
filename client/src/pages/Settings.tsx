@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { Percent, DollarSign, Globe, Save } from 'lucide-react';
+import { useLocaleStore } from '../store/localeStore';
 
 /* ─── Primitives ──────────────────────────────────────────────────────────── */
 const F: React.CSSProperties = { fontFamily: "'DM Sans', sans-serif" };
@@ -86,6 +87,7 @@ const CURRENCIES = [
 
 /* ─── Main ────────────────────────────────────────────────────────────────── */
 const Settings = () => {
+  const { t } = useLocaleStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -99,7 +101,7 @@ const Settings = () => {
     settingsAPI
       .get()
       .then(r => setGeneral(r.data.data))
-      .catch(() => toast.error('Failed to load settings'))
+      .catch(() => toast.error(t('Failed to load settings')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -108,9 +110,9 @@ const Settings = () => {
     setSaving(true);
     try {
       await settingsAPI.update(general);
-      toast.success('Settings saved');
+      toast.success(t('Settings saved'));
     } catch {
-      toast.error('Failed to save settings');
+      toast.error(t('Failed to save settings'));
     } finally {
       setSaving(false);
     }
@@ -127,15 +129,15 @@ const Settings = () => {
     <div className="min-h-screen bg-[#111318] p-5 space-y-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── Page heading ── */}
       <div style={{ marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>Settings</h1>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>Configure system preferences</p>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{t('Settings')}</h1>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{t('Configure system preferences')}</p>
       </div>
 
       {/* ══ General ══════════════════════════════════════════════════════════ */}
       <Card>
-        <SectionHeader label="General Settings" sub="Configure tax, currency, and loyalty rules" />
+        <SectionHeader label={t('General Settings')} sub={t('Configure tax, currency, and loyalty rules')} />
         <form onSubmit={saveGeneral}>
-          <Field label="VAT Rate" hint="Applied at checkout on taxable items">
+          <Field label={t('VAT Rate')} hint={t('Applied at checkout on taxable items')}>
             <IconWrap icon={Percent} right="%">
               <input
                 type="number"
@@ -148,7 +150,7 @@ const Settings = () => {
               />
             </IconWrap>
           </Field>
-          <Field label="Currency" hint="Display currency used system-wide">
+          <Field label={t('Currency')} hint={t('Display currency used system-wide')}>
             <IconWrap icon={Globe}>
               <select
                 value={general.currency}
@@ -157,7 +159,7 @@ const Settings = () => {
               >
                 {CURRENCIES.map(c => (
                   <option key={c.value} value={c.value}>
-                    {c.label}
+                    {t(c.label)}
                   </option>
                 ))}
               </select>
@@ -167,10 +169,10 @@ const Settings = () => {
           <Divider />
 
           <Field
-            label="Loyalty Points Rate"
-            hint={`Points per 1 ${general.currency} spent${
+            label={t('Loyalty Points Rate')}
+            hint={t('Points per 1 {currency} spent', { currency: general.currency }) + `${
               Number(general.loyalty_points_rate) > 0
-                ? ` · 1,000 ${general.currency} = ${(1000 * Number(general.loyalty_points_rate)).toLocaleString()} pts`
+                ? ` · 1,000 ${general.currency} = ${(1000 * Number(general.loyalty_points_rate)).toLocaleString()} ${t('pts')}`
                 : ''
             }`}
           >

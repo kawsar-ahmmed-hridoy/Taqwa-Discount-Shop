@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useLocaleStore } from '../store/localeStore';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -68,6 +69,7 @@ const rolePillStyle: Record<string, string> = {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: SidebarProps) => {
   const { user } = useAuthStore();
+  const { t } = useLocaleStore();
   const location = useLocation();
 
   const userRole = user?.role ?? '';
@@ -91,7 +93,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
             if (!sidebarOpen) setSidebarOpen(true);
           }}
           className="flex items-center gap-2.5 cursor-pointer w-full"
-          title={!sidebarOpen ? 'Expand' : ''}
+          title={!sidebarOpen ? t('Expand') : ''}
         >
           {/* Icon */}
           <div className="relative w-[34px] h-[34px] rounded-[9px] bg-[var(--accent)] flex items-center justify-center flex-shrink-0" style={{ background: `linear-gradient(135deg, ${'var(--accent)'} 0%, ${'var(--accent)'} 100%)` }}>
@@ -103,10 +105,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
           {sidebarOpen && (
             <div className="flex-1 overflow-hidden">
               <p className="text-[13.5px] font-semibold leading-tight tracking-tight" style={{ color: 'var(--text)' }}>
-                Taqwa
+                {t('Taqwa')}
               </p>
               <p className="text-[11px] mt-px" style={{ color: 'var(--text)' }}>
-                Discount Shop
+                {t('Discount Shop')}
               </p>
             </div>
           )}
@@ -119,7 +121,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
               e.stopPropagation();
               setSidebarOpen(false);
             }}
-            title="Collapse"
+            title={t('Collapse')}
             className="w-[26px] h-[26px] rounded-[7px] border bg-white/[0.04] hover:bg-white/[0.09] hover:border-white/[0.13] flex items-center justify-center hover:text-[#a0a8b8] transition-all duration-150 flex-shrink-0 ml-auto"
             style={{ borderColor: 'var(--border-subtle)', color: 'var(--text)' }}
           >
@@ -139,7 +141,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
               {/* Section label */}
               {sidebarOpen && (
                 <p className="px-2 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--text)' }}>
-                  {section.label}
+                  {t(section.label)}
                 </p>
               )}
               {!sidebarOpen && <div className="h-3" />}
@@ -179,7 +181,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
 
                     {sidebarOpen && (
                       <span className="text-[13px] font-medium tracking-[-0.005em] truncate flex-1">
-                        {item.label}
+                        {t(item.label)}
                       </span>
                     )}
 
@@ -187,7 +189,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
                     {!sidebarOpen && (
                       <div className="absolute left-full ml-2.5 px-2.5 py-1.5 border text-[12px] font-medium rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 shadow-xl"
                         style={{ background: 'var(--card-bg)', borderColor: 'var(--border-subtle)', color: 'var(--muted-2)' }}>
-                        {item.label}
+                        {t(item.label)}
                       </div>
                     )}
                   </Link>
@@ -227,13 +229,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, onLogout, onProfileClick }: Side
         {/* Logout */}
         <button
           onClick={onLogout}
-          title={!sidebarOpen ? 'Log out' : undefined}
+          title={!sidebarOpen ? t('Log out') : undefined}
           className={`flex items-center h-[34px] w-full rounded-lg text-[#3a404f] hover:text-[#e06c75] hover:bg-[#e06c75]/[0.08] transition-all duration-[120ms]
             ${sidebarOpen ? 'gap-2.5 px-2.5' : 'justify-center px-0'}`}
         >
           <LogOut size={14} strokeWidth={1.8} className="flex-shrink-0" />
           {sidebarOpen && (
-            <span className="text-[12.5px] font-medium">Log out</span>
+            <span className="text-[12.5px] font-medium">{t('Log out')}</span>
           )}
         </button>
       </div>

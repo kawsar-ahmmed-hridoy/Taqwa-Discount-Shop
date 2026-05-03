@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { staffAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, X, Search, Shield, Users, Mail, ShieldCheck, RefreshCw, Loader2 } from 'lucide-react';
+import { useLocaleStore } from '../store/localeStore';
 
 interface Staff {
   id: number;
@@ -47,6 +48,7 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 
 /* ─── Main ────────────────────────────────────────────────────────────────── */
 const StaffPage = () => {
+  const { t, language } = useLocaleStore();
   const [staff, setStaff]               = useState<Staff[]>([]);
   const [loading, setLoading]           = useState(true);
   const [showModal, setShowModal]       = useState(false);
@@ -219,7 +221,7 @@ const StaffPage = () => {
           <Search size={13} style={{ position: 'absolute', left: 10, top: '50%',
             transform: 'translateY(-50%)', color: '#4b5563' }} />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name or email…"
+            placeholder={t('Search by name or email…')}
             style={{ ...inp, paddingLeft: 30 }} />
         </div>
         <div style={{ display: 'flex', gap: 4, background: 'var(--panel-bg)', padding: 4,
@@ -230,7 +232,7 @@ const StaffPage = () => {
                 borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.12s',
                 background: filterRole === r ? 'var(--accent)' : 'transparent',
                 color: filterRole === r ? '#fff' : 'var(--muted)' }}>
-              {r === 'all' ? 'All' : r.charAt(0) + r.slice(1).toLowerCase()}
+              {r === 'all' ? t('All') : t(r)}
             </button>
           ))}
         </div>
@@ -242,11 +244,11 @@ const StaffPage = () => {
           justifyContent: 'center', background: 'var(--panel-bg)', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: 12, padding: '60px 0', gap: 10 }}>
           <Users size={34} color="var(--muted)" />
-          <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>No staff members found</p>
+          <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>{t('No staff members found')}</p>
           <button onClick={openAdd}
             style={{ ...F, background: 'var(--accent)', color: '#fff', border: 'none',
               borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
-            Add Staff
+            {t('Add Staff')}
           </button>
         </div>
       ) : (
@@ -255,7 +257,7 @@ const StaffPage = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                {['Member', 'Role', 'Status', 'Joined', ''].map((h, i) => (
+                {[t('Member'), t('Role'), t('Status'), t('Joined'), ''].map((h, i) => (
                   <th key={i} style={{ padding: '11px 16px', textAlign: i >= 3 ? 'right' : 'left',
                     fontSize: 11, fontWeight: 600, color: 'var(--muted)',
                     letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
@@ -300,19 +302,19 @@ const StaffPage = () => {
                         color: m.isActive ? '#34d399' : 'var(--muted)' }}>
                         <span style={{ width: 6, height: 6, borderRadius: '50%',
                           background: m.isActive ? '#10b981' : '#374151' }} />
-                        {m.isActive ? 'Active' : 'Inactive'}
+                        {m.isActive ? t('Active') : t('Inactive')}
                       </span>
                     </td>
 
                     {/* Joined */}
                     <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--muted)', textAlign: 'right' }}>
-                      {new Date(m.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(m.createdAt).toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
 
                     {/* Actions */}
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                        <button onClick={() => openEdit(m)} title="Edit"
+                        <button onClick={() => openEdit(m)} title={t('Edit')}
                           style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border-subtle)',
                             background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
@@ -320,7 +322,7 @@ const StaffPage = () => {
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--muted)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-subtle)'; }}>
                           <Edit size={13} />
                         </button>
-                        <button onClick={() => setDeleteId(m.id)} title="Delete"
+                        <button onClick={() => setDeleteId(m.id)} title={t('Delete')}
                           style={{ padding: 6, borderRadius: 6, border: '1px solid var(--border-subtle)',
                             background: 'transparent', color: 'var(--muted)', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', transition: 'all 0.12s' }}
@@ -336,7 +338,7 @@ const StaffPage = () => {
             </tbody>
           </table>
           <div style={{ padding: '10px 16px', fontSize: 11, color: 'var(--muted)' }}>
-            Showing {filtered.length} of {staff.length} members
+            {t('Showing {count} of {total} members', { count: filtered.length, total: staff.length })}
           </div>
         </div>
       )}
@@ -358,7 +360,7 @@ const StaffPage = () => {
                   <Shield size={13} color="#6ea8fe" />
                 </div>
                 <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
-                  {selectedStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+                  {selectedStaff ? t('Edit Staff Member') : t('Add New Staff Member')}
                 </p>
               </div>
               <button onClick={closeModal}
@@ -373,27 +375,27 @@ const StaffPage = () => {
             <form onSubmit={handleSubmit} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
               <div>
-                <Label>Full Name *</Label>
+                <Label>{t('Full Name')} *</Label>
                 <input type="text" required value={formData.fullName} placeholder="e.g. Mahbub Rahman"
                   onChange={e => setFormData(f => ({ ...f, fullName: e.target.value }))}
                   style={inp} />
               </div>
 
               <div>
-                <Label>Email Address *</Label>
+                <Label>{t('Email Address')} *</Label>
                 <input type="email" required value={formData.email} disabled={!!selectedStaff}
                   placeholder="staff@example.com"
                   onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
                   style={{ ...inp, opacity: selectedStaff ? 0.5 : 1, cursor: selectedStaff ? 'not-allowed' : 'text' }} />
                 {!selectedStaff && verificationId && (
                   <p style={{ fontSize: 11, color: '#6ea8fe', marginTop: 6 }}>
-                    Verification is locked to {verificationEmail || formData.email}. Use the code sent there to finish.
+                    {t('Verification is locked to')} {verificationEmail || formData.email}. {t('Use the code sent there to finish.')}
                   </p>
                 )}
               </div>
 
               <div>
-                <Label>Password {selectedStaff ? '(leave blank to keep)' : '*'}</Label>
+                <Label>{t('Password')} {selectedStaff ? t('(leave blank to keep)') : '*'}</Label>
                 <input type="password" required={!selectedStaff} value={formData.password}
                   placeholder={selectedStaff ? 'Leave blank to keep current' : 'Min. 6 characters'}
                   onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
@@ -402,14 +404,14 @@ const StaffPage = () => {
               </div>
 
               <div>
-                <Label>Role *</Label>
+                <Label>{t('Role')} *</Label>
                 <select required value={formData.role}
                   onChange={e => setFormData(f => ({ ...f, role: e.target.value as any }))}
                   disabled={!selectedStaff && !!verificationId}
                   style={{ ...inp, opacity: !selectedStaff && verificationId ? 0.5 : 1, cursor: !selectedStaff && verificationId ? 'not-allowed' : 'pointer' }}>
-                  <option value="STAFF">Staff</option>
-                  <option value="MANAGER">Manager</option>
-                  <option value="OWNER">Owner</option>
+                  <option value="STAFF">{t('Staff')}</option>
+                  <option value="MANAGER">{t('Manager')}</option>
+                  <option value="OWNER">{t('Owner')}</option>
                 </select>
               </div>
 
@@ -418,8 +420,8 @@ const StaffPage = () => {
                 padding: '10px 14px', background: '#161920', borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: '#d1d5db', margin: 0 }}>Active Account</p>
-                  <p style={{ fontSize: 11, color: '#4b5563', marginTop: 1 }}>Staff can log in when active</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#d1d5db', margin: 0 }}>{t('Active Account')}</p>
+                  <p style={{ fontSize: 11, color: '#4b5563', marginTop: 1 }}>{t('Staff can log in when active')}</p>
                 </div>
                 <button type="button"
                   onClick={() => {
@@ -444,12 +446,12 @@ const StaffPage = () => {
                       <ShieldCheck size={14} color="#6ea8fe" />
                     </div>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#e7eefc', margin: 0 }}>Gmail verification sent</p>
-                      <p style={{ fontSize: 11, color: '#8ea4d0', margin: '2px 0 0' }}>Enter the 6-digit code from the email to create the staff account.</p>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#e7eefc', margin: 0 }}>{t('Gmail verification sent')}</p>
+                      <p style={{ fontSize: 11, color: '#8ea4d0', margin: '2px 0 0' }}>{t('Enter the 6-digit code from the email to create the staff account.')}</p>
                     </div>
                   </div>
                   <div>
-                    <Label>Verification Code *</Label>
+                    <Label>{t('Verification Code')} *</Label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -468,7 +470,7 @@ const StaffPage = () => {
                       style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#93a4c5', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     >
                       <RefreshCw size={13} />
-                      Edit Details
+                      {t('Edit Details')}
                     </button>
                     <button
                       type="button"
@@ -476,7 +478,7 @@ const StaffPage = () => {
                       disabled={sendingVerification}
                       style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: '#0f172a', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: sendingVerification ? 0.8 : 1 }}
                     >
-                      {sendingVerification ? <><Loader2 size={13} className="animate-spin" /> Resending…</> : <><Mail size={13} /> Resend Code</>}
+                      {sendingVerification ? <><Loader2 size={13} className="animate-spin" /> {t('Resending…')}</> : <><Mail size={13} /> {t('Resend Code')}</>}
                     </button>
                   </div>
                 </div>
@@ -487,13 +489,13 @@ const StaffPage = () => {
                   style={{ ...F, flex: 1, padding: '9px', borderRadius: 9,
                     border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
                     color: '#6b7280', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button type="submit"
                   disabled={sendingVerification || confirmingVerification}
                   style={{ ...F, flex: 2, padding: '9px', borderRadius: 9, border: 'none',
                     background: '#1f6feb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: sendingVerification || confirmingVerification ? 0.85 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  {selectedStaff ? 'Save Changes' : verificationId ? (confirmingVerification ? <><Loader2 size={13} className="animate-spin" /> Verifying…</> : 'Verify & Create Staff') : (sendingVerification ? <><Loader2 size={13} className="animate-spin" /> Sending…</> : 'Send Verification Code')}
+                  {selectedStaff ? t('Save Changes') : verificationId ? (confirmingVerification ? <><Loader2 size={13} className="animate-spin" /> {t('Verifying…')}</> : t('Verify & Create Staff')) : (sendingVerification ? <><Loader2 size={13} className="animate-spin" /> {t('Sending…')}</> : t('Send Verification Code'))}
                 </button>
               </div>
             </form>
@@ -512,21 +514,21 @@ const StaffPage = () => {
               display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               <Trash2 size={18} color="#f87171" />
             </div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#f0f2f5', margin: '0 0 6px' }}>Remove Staff Member</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#f0f2f5', margin: '0 0 6px' }}>{t('Remove Staff Member')}</p>
             <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 20px', lineHeight: 1.5 }}>
-              This action cannot be undone. The staff member will lose all access.
+              {t('This action cannot be undone. The staff member will lose all access.')}
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setDeleteId(null)}
                 style={{ ...F, flex: 1, padding: '9px', borderRadius: 9,
                   border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
                   color: '#6b7280', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Cancel
+                {t('Cancel')}
               </button>
               <button onClick={handleDelete}
                 style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: 'none',
                   background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Remove
+                {t('Remove')}
               </button>
             </div>
           </div>

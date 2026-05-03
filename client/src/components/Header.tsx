@@ -1,7 +1,8 @@
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Languages } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState } from 'react';
 import NotificationCenter from './NotificationCenter';
+import { useLocaleStore } from '../store/localeStore';
 
 interface MenuItem {
   path: string;
@@ -14,6 +15,7 @@ interface HeaderProps {
 
 const Header = ({ currentPage }: HeaderProps) => {
   useAuthStore();
+  const { language, toggleLanguage, t } = useLocaleStore();
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     try {
@@ -41,14 +43,6 @@ const Header = ({ currentPage }: HeaderProps) => {
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
 
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-
   return (
     <header
       className="h-12 flex items-center justify-between px-5 flex-shrink-0 bg-white dark:bg-[#111318] border-b border-gray-200 dark:border-white/[0.055]"
@@ -57,21 +51,36 @@ const Header = ({ currentPage }: HeaderProps) => {
       {/* Left — page title + date */}
       <div className="flex items-center gap-2.5">
         <h2 className="text-[13.5px] font-semibold text-gray-900 dark:text-[#c8cdd8] tracking-tight leading-none" style={{ color: 'var(--body-text)' }}>
-          {currentPage?.label ?? 'Dashboard'}
+          {t(currentPage?.label ?? 'Dashboard')}
         </h2>
         <span className="w-[3px] h-[3px] rounded-full bg-[#e9b633]" />
         <span className="text-[11.5px] text-gray-600 dark:text-[#bbbfcb] font-normal" style={{ color: 'var(--muted-2)' }}>
-          {today}
+          {new Date().toLocaleDateString(language === 'bn' ? 'bn-BD' : 'en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })}
         </span>
       </div>
 
       {/* Right — actions */}
       <div className="flex items-center gap-1.5">
         
-        {/* Notifications */}
         <div className="relative">
           <NotificationCenter />
         </div>
+
+        <button
+          title={language === 'en' ? 'Translate to Bangla' : 'Translate to English'}
+          onClick={toggleLanguage}
+          aria-pressed={language === 'bn'}
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03] px-2.5 text-[12px] font-semibold text-gray-700 dark:text-[#fafafa] hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all duration-[120ms]"
+          style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text)' }}
+        >
+          <Languages size={13} strokeWidth={1.8} />
+          {language === 'en' ? 'E to B' : 'B to E'}
+        </button>
 
         <button
           title="Toggle color mode"
