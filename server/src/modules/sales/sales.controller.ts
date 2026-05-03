@@ -126,8 +126,8 @@ export const approveRefundRequest = async (req: Request, res: Response): Promise
     }
 
     const { notes } = req.body as { notes?: string };
-    const refund = await approveRefund(Number(req.params.id), userReq.user.id, notes);
-    await recordAuditLog({
+    const refund = await approveRefund(Number(req.params.id), Number(userReq.user.id), notes);
+      await recordAuditLog({
       userId: Number(userReq.user.id),
       actorRole: userReq.user.role,
       action: 'REFUND_APPROVED',

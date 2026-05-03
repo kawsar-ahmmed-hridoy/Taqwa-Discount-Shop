@@ -7,7 +7,7 @@ import { getPrismaClient } from '../config';
 const prisma = getPrismaClient();
 
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction): any => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const authHeader = req.headers.authorization;
     const token = extractToken(authHeader);
@@ -31,7 +31,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: Number(user.id) },
       select: { id: true, email: true, fullName: true, role: true, isActive: true },
     });
 
