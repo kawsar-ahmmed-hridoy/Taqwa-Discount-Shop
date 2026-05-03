@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
 import { connectDatabase, disconnectDatabase, checkDatabaseHealth } from './config';
 import { config } from './config/app.config';
 import { requestLogger, requestId, sanitizeBody, errorHandler, notFoundHandler } from './middleware';
@@ -67,6 +68,21 @@ app.use(API_ROUTES.DASHBOARD, dashboardRoutes);
 app.use(API_ROUTES.NOTIFICATIONS, notificationsRoutes);
 app.use(API_ROUTES.SETTINGS, settingsRoutes);
 
+
+// Serve static files from the React frontend build
+const frontendDistPath = path.join(__dirname, '../../client/dist');
+app.use(express.static(frontendDistPath, { maxAge: '1h' }));
+
+// SPA catch-all: serve index.html for any non-API route (enables client-side routing)
+app.get('*', (_req: Request, res: Response) => {
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Failed to serve SPA index:', err);
+      res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Not found' });
+    }
+  });
+});
 
 //egulo last e rakhte hobe
 app.use(notFoundHandler);
