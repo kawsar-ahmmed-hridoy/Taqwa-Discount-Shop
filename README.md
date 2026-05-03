@@ -12,6 +12,7 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Email Configuration](#email-configuration-gmail-smtp)
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
@@ -29,6 +30,8 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - **Password Security**: bcrypt-based password hashing with salt rounds
 - **Profile Management**: User profile updates and password reset functionality
 - **Login/Logout**: Secure session management with automatic token refresh
+- **Gmail OTP Verification**: Two-step verification for staff creation via 6-digit email codes
+- **Password Reset via OTP**: Secure password recovery using Gmail-sent verification codes
 
 ### Point of Sale (POS)
 - **Barcode Scanning**: Real-time product lookup via html5-qrcode
@@ -99,6 +102,8 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - **Performance Tracking**: Sales and activity metrics per staff member
 - **Role Assignment**: Dynamic role updates for team members
 - **Attendance Tracking**: Work schedule and attendance logs
+- **Gmail Verification**: New staff accounts require Gmail verification with a 6-digit code sent to their email
+- **Secure Onboarding**: Ensures valid email addresses and active staff during creation
 
 ### Settings & Configuration
 - **Business Settings**: Company information and preferences
@@ -400,7 +405,60 @@ npm run seed
 
 ---
 
-## 🚀 Running the Application
+## � Email Configuration (Gmail SMTP)
+
+The system uses Gmail SMTP for sending verification codes during staff creation and password reset flows.
+
+### Setup Instructions
+
+1. **Enable 2-Step Verification** on your Google Account
+   - Go to [Google Account Security Settings](https://myaccount.google.com/security)
+   - Enable 2-Step Verification (if not already enabled)
+
+2. **Generate App Password**
+   - Visit [Google App Passwords](https://myaccount.google.com/apppasswords)
+   - Select "Mail" and "Windows Computer" (or your device type)
+   - Copy the generated 16-character app-specific password
+
+3. **Add to .env File** in `server/` directory:
+   ```env
+   GMAIL_USER=your-email@gmail.com
+   GMAIL_APP_PASSWORD=your-16-character-app-password
+   GMAIL_FROM_NAME=Taqwa POS
+   STAFF_VERIFICATION_EXPIRY_MINUTES=10
+   ```
+
+### Verification Code Flow
+
+#### Staff Creation Verification
+- When creating a new staff member, a 6-digit verification code is sent to the staff's Gmail address
+- Staff must enter the code within 10 minutes (configurable) to complete account creation
+- Upon verification, the staff account is created with the provided email and password
+- Audit log records the creation with a note about Gmail verification
+
+#### Password Reset Verification
+- When a user clicks "Forgot password" on the login page, they enter their email address
+- A 6-digit verification code is sent to their registered email
+- User enters the code and their new password in the modal
+- Upon successful verification, the password is updated
+- Audit log records the password reset event
+
+### Email Templates
+- Styled HTML emails matching the Taqwa POS dark theme (#111318 background, #6ea8fe accents)
+- Clear display of 6-digit codes in large font
+- Expiry time included in the email
+- Professional subject lines and copy
+
+### Security Notes
+- Codes are hashed before storage using bcrypt
+- Each verification request generates a unique code
+- Failed attempts are tracked (prevents brute force)
+- Codes automatically expire after the configured time
+- Gmail app password is more secure than storing main account password
+
+---
+
+## �🚀 Running the Application
 
 ### Start Backend Server
 ```bash
@@ -452,8 +510,11 @@ http://localhost:5000/api
 | POST | `/auth/logout` | User logout |
 | GET | `/auth/me` | Get current user |
 | PUT | `/auth/profile` | Update user profile |
-| POST | `/auth/reset-password` | Reset password |
-| POST | `/auth/forgot-password` | Forgot password request |
+| POST | `/auth/reset-password` | Reset password (authenticated) |
+| POST | `/auth/forgot-password` | Request password reset code via email |
+| POST | `/auth/forgot-password/confirm` | Verify code and reset password |
+| POST | `/staff/verify-email` | Request staff verification code |
+| POST | `/staff/verify-email/confirm` | Verify staff with code and complete signup |
 
 **Request Header:**
 ```
@@ -679,6 +740,31 @@ git push origin feature/feature-name
 - Check browser permissions for camera access
 - Use HTTPS in production
 - Test with valid barcode format
+
+### Gmail Verification Not Working
+
+**Issue: "Gmail verification is not configured yet"**
+- Check that GMAIL_USER and GMAIL_APP_PASSWORD are set in `.env`
+- Verify the Gmail account has 2-Step Verification enabled
+- Ensure you're using an [App Password](https://myaccount.google.com/apppasswords), not your main Gmail password
+- Restart the server after updating `.env` values
+
+**Emails not being sent:**
+1. Verify GMAIL_USER is correct
+2. Check GMAIL_APP_PASSWORD is the 16-character app-specific password
+3. Confirm the Gmail account allows "Less secure app access" or use App Passwords
+4. Check server logs for SMTP errors
+5. Test with `npm run dev` in development mode
+
+**Verification code expired:**
+- Codes expire after `STAFF_VERIFICATION_EXPIRY_MINUTES` (default: 10 minutes)
+- User must request a new code if expired
+- This timeout is configurable in `.env`
+
+**Too many failed verification attempts:**
+- Each verification record tracks failed attempts
+- After multiple failures, a new code must be requested
+- Prevents brute force attacks
 
 ---
 

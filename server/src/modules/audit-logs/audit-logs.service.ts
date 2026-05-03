@@ -15,6 +15,10 @@ const CRITICAL_ACTIONS = new Set([
   'REFUND_APPROVED',
   'REFUND_REJECTED',
   'REFUND_PROCESSED',
+  'PASSWORD_RESET',
+  'LOGIN',
+  'SIGNUP',
+  'LOGOUT',
 ]);
 
 const truncate = (value?: string | null) => {
