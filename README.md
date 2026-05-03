@@ -13,6 +13,7 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Email Configuration](#email-configuration-gmail-smtp)
+- [Multi-Language Support](#multi-language-support)
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
@@ -111,6 +112,14 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 - **User Settings**: Notification preferences and display options
 - **Backup & Restore**: Data backup and recovery options
 
+### Multi-Language Support (i18n)
+- **Dynamic Language Switching**: Change application language without reloading
+- **Multiple Languages**: Support for English, Bangla and extensible for additional languages
+- **Persistent Locale**: Language preference saved to localStorage for session continuity
+- **Centralized Translations**: Organized translation files for easy management and maintenance
+- **Real-time Sync**: LanguageSync component synchronizes language changes across all pages
+- **Complete Coverage**: All UI elements, forms, modals, and notifications translated
+
 ---
 
 ## 🛠 Tech Stack
@@ -122,7 +131,7 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 | **TypeScript** | 5.6.3 | Type safety |
 | **Vite** | 6.0.1 | Build tool & dev server |
 | **Tailwind CSS** | 3.4.15 | Utility-first CSS framework |
-| **Zustand** | 5.0.2 | State management |
+| **Zustand** | 5.0.2 | State management & i18n locale storage |
 | **React Router DOM** | 7.0.2 | Client-side routing |
 | **Axios** | 1.7.9 | HTTP client |
 | **Recharts** | 2.15.0 | Data visualization |
@@ -131,6 +140,7 @@ A comprehensive, enterprise-grade Point of Sale (POS) system designed for discou
 | **ExcelJS** | 4.4.0 | Excel file generation |
 | **Lucide React** | 0.469.0 | Icon library |
 | **React Hot Toast** | 2.4.1 | Toast notifications |
+| **Custom i18n** | - | Multi-language support with English & Bangla |
 
 ### Backend
 | Technology | Version | Purpose |
@@ -159,6 +169,7 @@ Taqwa/
 │   │   ├── components/              # Reusable React components
 │   │   │   ├── BarcodeScanner.tsx   # QR/Barcode scanner component
 │   │   │   ├── Header.tsx           # Page header with notifications
+│   │   │   ├── LanguageSync.tsx     # Language synchronization component
 │   │   │   ├── Layout.tsx           # Main layout wrapper
 │   │   │   ├── Sidebar.tsx          # Navigation sidebar
 │   │   │   ├── NotificationCenter.tsx # Notification management
@@ -184,7 +195,15 @@ Taqwa/
 │   │   │   └── api.ts               # Axios API client with interceptors
 │   │   │
 │   │   ├── store/
-│   │   │   └── authStore.ts         # Zustand auth state management
+│   │   │   ├── authStore.ts         # Zustand auth state management
+│   │   │   └── localeStore.ts       # Zustand i18n locale management
+│   │   │
+│   │   ├── utils/
+│   │   │   └── i18n.ts              # Multi-language support utilities
+│   │   │
+│   │   ├── locales/                 # Translation files
+│   │   │   ├── en.json              # English translations
+│   │   │   └── bl.json              # Bangla translations
 │   │   │
 │   │   ├── App.tsx                  # Main app component
 │   │   ├── App.css                  # Global styles
@@ -457,7 +476,128 @@ The system uses Gmail SMTP for sending verification codes during staff creation 
 - Gmail app password is more secure than storing main account password
 
 ---
+## 🌐 Multi-Language Support
 
+The Taqwa POS system includes comprehensive internationalization (i18n) support allowing users to switch between multiple languages seamlessly without reloading the application.
+
+### Supported Languages
+- **English** (en) - Default language
+- **Bangla** (bl) - Translated language
+
+### How It Works
+
+#### Translation Files Structure
+```
+client/src/
+├── utils/
+│   └── i18n.ts                    # i18n configuration and utilities
+└── locales/                       # Translation files (add as needed)
+    ├── en.json                    # English translations
+    └── bl.json                    # Bangla translations
+```
+
+#### LanguageSync Component
+- **File**: [client/src/components/LanguageSync.tsx](client/src/components/LanguageSync.tsx)
+- **Purpose**: Synchronizes language changes across the entire application in real-time
+- **Integration**: Place this component in your main `Layout.tsx` wrapper
+- **Features**:
+  - Detects language changes from the locale store
+  - Updates document language attribute for accessibility
+  - Applies RTL/LTR text direction automatically
+  - Triggers re-renders across all pages without page reload
+
+#### Locale Store
+- **File**: [client/src/store/localeStore.ts](client/src/store/localeStore.ts)
+- **State Management**: Zustand-based store for managing current language preference
+- **Persistence**: Language preference automatically saved to localStorage
+- **Methods**:
+  - `setLocale(language)`: Change application language
+  - `locale`: Get current language code
+  - `direction`: Get text direction (rtl/ltr)
+
+#### i18n Utilities
+- **File**: [client/src/utils/i18n.ts](client/src/utils/i18n.ts)
+- **Functions**:
+  - `loadTranslations(locale)`: Load translation files dynamically
+  - `t(key)`: Translate key using current locale
+  - `formatDate(date)`: Format dates according to locale
+  - `formatCurrency(amount)`: Format currency based on locale
+
+### Usage in Components
+
+#### Basic Translation
+```tsx
+import { useLocaleStore } from '@/store/localeStore';
+import { t } from '@/utils/i18n';
+
+export function MyComponent() {
+  const { locale } = useLocaleStore();
+  
+  return (
+    <div>
+      <h1>{t('dashboard.welcome')}</h1>
+      <p>{t('dashboard.description')}</p>
+    </div>
+  );
+}
+```
+
+#### Language Switcher
+```tsx
+import { useLocaleStore } from '@/store/localeStore';
+
+export function LanguageSwitcher() {
+  const { locale, setLocale } = useLocaleStore();
+  
+  return (
+    <select value={locale} onChange={(e) => setLocale(e.target.value)}>
+      <option value="en">English</option>
+      <option value="bl">ইংরেজি</option>
+    </select>
+  );
+}
+```
+
+### Adding New Languages
+
+1. **Create Translation File**
+   - Add a new JSON file in `client/src/locales/` (e.g., `es.json` for Spanish)
+   - Follow the same structure as existing translation files
+
+2. **Example Translation File Format**
+   ```json
+   {
+     "common": {
+       "welcome": "Welcome to Taqwa POS",
+       "logout": "Logout"
+     },
+     "dashboard": {
+       "title": "Dashboard",
+       "sales": "Total Sales"
+     }
+   }
+   ```
+
+3. **Register the Language**
+   - Update `client/src/utils/i18n.ts` to include the new language
+   - Add option to language switcher component
+
+### RTL Support
+
+For Arabic and other RTL languages:
+- Document direction automatically set to `rtl` via LanguageSync component
+- Tailwind CSS handles RTL layout adjustments
+- Flexbox and grid layouts automatically adjust
+- Text alignment and padding reversed automatically
+
+### Performance Notes
+
+- Translations are loaded only once per language change
+- localStorage caching reduces file I/O on subsequent visits
+- Minimal re-render overhead due to Zustand state management
+- Lazy loading of translation files reduces initial bundle size
+
+---
 ## �🚀 Running the Application
 
 ### Start Backend Server
