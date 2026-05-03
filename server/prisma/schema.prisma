@@ -63,6 +63,24 @@ model User {
   @@map("users")
 }
 
+model StaffVerification {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  fullName     String
+  passwordHash String
+  role         UserRole
+  isActive     Boolean   @default(true)
+  codeHash     String
+  attempts     Int       @default(0)
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+  @@index([expiresAt])
+  @@map("staff_verifications")
+}
+
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique

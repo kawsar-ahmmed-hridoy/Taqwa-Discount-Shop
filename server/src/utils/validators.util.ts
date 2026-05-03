@@ -3,6 +3,11 @@ export const isValidEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
+export const isGmailAddress = (email: string): boolean => {
+  const gmailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|googlemail\.com)$/i;
+  return gmailRegex.test(email);
+};
+
 export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^[\d\s\-\+\(\)]+$/;
   return phone.length >= 7 && phoneRegex.test(phone);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { staffAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, X, Search, Shield, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Search, Shield, Users, Mail, ShieldCheck, RefreshCw, Loader2 } from 'lucide-react';
 
 interface Staff {
   id: number;
@@ -54,6 +54,11 @@ const StaffPage = () => {
   const [search, setSearch]             = useState('');
   const [filterRole, setFilterRole]     = useState<string>('all');
   const [deleteId, setDeleteId]         = useState<number | null>(null);
+  const [verificationId, setVerificationId] = useState<number | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [confirmingVerification, setConfirmingVerification] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '', fullName: '', password: '',
@@ -62,6 +67,27 @@ const StaffPage = () => {
   });
 
   useEffect(() => { fetchStaff(); }, []);
+
+  const clearVerification = () => {
+    setVerificationId(null);
+    setVerificationCode('');
+    setVerificationEmail('');
+  };
+
+  const sendVerificationCode = async () => {
+    setSendingVerification(true);
+    try {
+      const res = await staffAPI.requestVerification(formData);
+      setVerificationId(res.data.data.id);
+      setVerificationEmail(res.data.data.email);
+      setVerificationCode('');
+      toast.success('Verification code sent to Gmail');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to send verification code');
+    } finally {
+      setSendingVerification(false);
+    }
+  };
 
   const fetchStaff = async () => {
     try {
@@ -79,13 +105,27 @@ const StaffPage = () => {
         if (formData.password) payload.password = formData.password;
         await staffAPI.update(selectedStaff.id, payload);
         toast.success('Staff updated');
+      } else if (!verificationId) {
+        await sendVerificationCode();
+        return;
       } else {
-        await staffAPI.create(formData);
+        if (verificationCode.trim().length !== 6) {
+          toast.error('Enter the 6-digit verification code');
+          return;
+        }
+
+        setConfirmingVerification(true);
+        await staffAPI.confirmVerification({ verificationId, code: verificationCode.trim() });
         toast.success('Staff created');
       }
       closeModal();
       fetchStaff();
-    } catch { toast.error('Operation failed'); }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Operation failed');
+    } finally {
+      setSendingVerification(false);
+      setConfirmingVerification(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -101,16 +141,24 @@ const StaffPage = () => {
   const openEdit = (m: Staff) => {
     setSelectedStaff(m);
     setFormData({ email: m.email, fullName: m.fullName, password: '', role: m.role, isActive: m.isActive });
+    clearVerification();
     setShowModal(true);
   };
 
   const openAdd = () => {
     setSelectedStaff(null);
     setFormData({ email: '', fullName: '', password: '', role: 'STAFF', isActive: true });
+    clearVerification();
     setShowModal(true);
   };
 
-  const closeModal = () => { setShowModal(false); setSelectedStaff(null); };
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedStaff(null);
+    clearVerification();
+    setSendingVerification(false);
+    setConfirmingVerification(false);
+  };
 
   const filtered = staff.filter(m =>
     (filterRole === 'all' || m.role === filterRole) &&
@@ -338,6 +386,11 @@ const StaffPage = () => {
                   placeholder="staff@example.com"
                   onChange={e => setFormData(f => ({ ...f, email: e.target.value }))}
                   style={{ ...inp, opacity: selectedStaff ? 0.5 : 1, cursor: selectedStaff ? 'not-allowed' : 'text' }} />
+                {!selectedStaff && verificationId && (
+                  <p style={{ fontSize: 11, color: '#6ea8fe', marginTop: 6 }}>
+                    Verification is locked to {verificationEmail || formData.email}. Use the code sent there to finish.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -345,14 +398,16 @@ const StaffPage = () => {
                 <input type="password" required={!selectedStaff} value={formData.password}
                   placeholder={selectedStaff ? 'Leave blank to keep current' : 'Min. 6 characters'}
                   onChange={e => setFormData(f => ({ ...f, password: e.target.value }))}
-                  style={inp} />
+                  disabled={!selectedStaff && !!verificationId}
+                  style={{ ...inp, opacity: !selectedStaff && verificationId ? 0.5 : 1, cursor: !selectedStaff && verificationId ? 'not-allowed' : 'text' }} />
               </div>
 
               <div>
                 <Label>Role *</Label>
                 <select required value={formData.role}
                   onChange={e => setFormData(f => ({ ...f, role: e.target.value as any }))}
-                  style={inp}>
+                  disabled={!selectedStaff && !!verificationId}
+                  style={{ ...inp, opacity: !selectedStaff && verificationId ? 0.5 : 1, cursor: !selectedStaff && verificationId ? 'not-allowed' : 'pointer' }}>
                   <option value="STAFF">Staff</option>
                   <option value="MANAGER">Manager</option>
                   <option value="OWNER">Owner</option>
@@ -368,7 +423,11 @@ const StaffPage = () => {
                   <p style={{ fontSize: 11, color: '#4b5563', marginTop: 1 }}>Staff can log in when active</p>
                 </div>
                 <button type="button"
-                  onClick={() => setFormData(f => ({ ...f, isActive: !f.isActive }))}
+                  onClick={() => {
+                    if (!selectedStaff && verificationId) return;
+                    setFormData(f => ({ ...f, isActive: !f.isActive }));
+                  }}
+                  disabled={!selectedStaff && !!verificationId}
                   style={{ width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
                     background: formData.isActive ? '#1f6feb' : 'rgba(255,255,255,0.08)',
                     position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
@@ -379,6 +438,51 @@ const StaffPage = () => {
                 </button>
               </div>
 
+              {!selectedStaff && verificationId && (
+                <div style={{ padding: '14px', borderRadius: 12, border: '1px solid rgba(110,168,254,0.16)', background: 'rgba(31,111,235,0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(110,168,254,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <ShieldCheck size={14} color="#6ea8fe" />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#e7eefc', margin: 0 }}>Gmail verification sent</p>
+                      <p style={{ fontSize: 11, color: '#8ea4d0', margin: '2px 0 0' }}>Enter the 6-digit code from the email to create the staff account.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Verification Code *</Label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      required={!selectedStaff && !!verificationId}
+                      value={verificationCode}
+                      onChange={e => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="123456"
+                      style={inp}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button
+                      type="button"
+                      onClick={clearVerification}
+                      style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#93a4c5', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                    >
+                      <RefreshCw size={13} />
+                      Edit Details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendVerificationCode}
+                      disabled={sendingVerification}
+                      style={{ ...F, flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: '#0f172a', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: sendingVerification ? 0.8 : 1 }}
+                    >
+                      {sendingVerification ? <><Loader2 size={13} className="animate-spin" /> Resending…</> : <><Mail size={13} /> Resend Code</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 8, paddingTop: 2 }}>
                 <button type="button" onClick={closeModal}
                   style={{ ...F, flex: 1, padding: '9px', borderRadius: 9,
@@ -387,9 +491,10 @@ const StaffPage = () => {
                   Cancel
                 </button>
                 <button type="submit"
+                  disabled={sendingVerification || confirmingVerification}
                   style={{ ...F, flex: 2, padding: '9px', borderRadius: 9, border: 'none',
-                    background: '#1f6feb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                  {selectedStaff ? 'Save Changes' : 'Create Staff Member'}
+                    background: '#1f6feb', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: sendingVerification || confirmingVerification ? 0.85 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  {selectedStaff ? 'Save Changes' : verificationId ? (confirmingVerification ? <><Loader2 size={13} className="animate-spin" /> Verifying…</> : 'Verify & Create Staff') : (sendingVerification ? <><Loader2 size={13} className="animate-spin" /> Sending…</> : 'Send Verification Code')}
                 </button>
               </div>
             </form>

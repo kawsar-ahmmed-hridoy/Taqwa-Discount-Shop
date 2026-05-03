@@ -95,7 +95,8 @@ export const expenseAPI = {
 
 export const staffAPI = {
   getAll: () => api.get('/staff'),
-  create: (data: unknown) => api.post('/staff', data),
+  requestVerification: (data: unknown) => api.post('/staff', data),
+  confirmVerification: (data: unknown) => api.post('/staff/verification/confirm', data),
   update: (id: number, data: unknown) => api.put(`/staff/${id}`, data),
   delete: (id: number) => api.delete(`/staff/${id}`),
 };
