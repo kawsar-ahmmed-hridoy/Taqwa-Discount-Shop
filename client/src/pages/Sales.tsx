@@ -81,7 +81,15 @@ const PAYMENT_LABELS: Record<'CASH' | 'CARD' | 'UPI', string> = {
 };
 
 const Sales = () => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Load cart from localStorage or initialize empty
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('sales-cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
@@ -93,6 +101,11 @@ const Sales = () => {
   const [showReceipt, setShowReceipt] = useState(false);
   const [showSalesHistory, setShowSalesHistory] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sales-cart', JSON.stringify(cart));
+  }, [cart]);
 
   useEffect(() => {
     fetchCustomers();
@@ -127,31 +140,34 @@ const Sales = () => {
     const finalPrice = product.discount
       ? product.sellingPrice * (1 - product.discount / 100)
       : product.sellingPrice;
-    const existing = cart.find((i) => i.productId === product.id);
-    if (existing) {
-      setCart(cart.map((i) =>
-        i.productId === product.id
-          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.price }
-          : i
-      ));
-    } else {
-      setCart([...cart, {
-        productId: product.id,
-        name: product.name,
-        price: finalPrice,
-        originalPrice: product.sellingPrice,
-        discount: product.discount || 0,
-        quantity: 1,
-        total: finalPrice,
-      }]);
-    }
+    
+    setCart((prevCart) => {
+      const existing = prevCart.find((i) => i.productId === product.id);
+      if (existing) {
+        return prevCart.map((i) =>
+          i.productId === product.id
+            ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.price }
+            : i
+        );
+      } else {
+        return [...prevCart, {
+          productId: product.id,
+          name: product.name,
+          price: finalPrice,
+          originalPrice: product.sellingPrice,
+          discount: product.discount || 0,
+          quantity: 1,
+          total: finalPrice,
+        }];
+      }
+    });
   };
 
-  const removeFromCart = (id: number) => setCart(cart.filter((i) => i.productId !== id));
+  const removeFromCart = (id: number) => setCart((prevCart) => prevCart.filter((i) => i.productId !== id));
 
   const updateQuantity = (id: number, qty: number) => {
     if (qty <= 0) { removeFromCart(id); return; }
-    setCart(cart.map((i) => i.productId === id ? { ...i, quantity: qty, total: qty * i.price } : i));
+    setCart((prevCart) => prevCart.map((i) => i.productId === id ? { ...i, quantity: qty, total: qty * i.price } : i));
   };
 
   const subtotal = cart.reduce((s, i) => s + i.total, 0);
