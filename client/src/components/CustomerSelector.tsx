@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, Plus, User, X, Mail, Phone, MapPin } from 'lucide-react';
+import { Search, Plus, X, Mail, Phone} from 'lucide-react';
 import { customerAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
