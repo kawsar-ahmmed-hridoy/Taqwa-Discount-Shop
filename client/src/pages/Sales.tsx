@@ -8,6 +8,7 @@ import {
 import { jsPDF } from 'jspdf';
 import BarcodeScanner from '../components/BarcodeScanner';
 import SalesHistoryModal from '../components/SalesHistoryModal';
+import CustomerSelector from '../components/CustomerSelector';
 
 interface CartItem {
   productId: number;
@@ -585,17 +586,12 @@ const Sales = () => {
               <User size={11} strokeWidth={1.8} />
               Customer
             </div>
-            <select
-              value={selectedCustomer ?? ''}
-              onChange={(e) => setSelectedCustomer(Number(e.target.value) || null)}
-              className="w-full h-8 bg-white/[0.04] border border-white/[0.08] hover:border-white/[0.12] focus:border-[#1f6feb]/50 rounded-[7px] text-[#8892a4] text-[12px] px-2.5 outline-none appearance-none cursor-pointer transition-all duration-[120ms]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              <option value="">Walk-in Customer</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} — {c.phone}</option>
-              ))}
-            </select>
+            <CustomerSelector
+              selectedCustomerId={selectedCustomer}
+              onSelectCustomer={setSelectedCustomer}
+              customers={customers}
+              onCustomersChange={setCustomers}
+            />
           </div>
 
           {/* Payment mode */}
